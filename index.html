@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Printer Panel</title>
+</head>
+<body style="font-family: Arial; text-align:center; margin-top:50px;">
+    <h2>Printer Command Panel</h2>
+    <input id="text" type="text" placeholder="Enter text" style="width:60%; padding:8px;">
+    <button onclick="sendText()" style="padding:8px 16px;">Send</button>
+
+    <script>
+        function sendText() {
+            const text = document.getElementById('text').value;
+            fetch('https://script.google.com/macros/s/AKfycbypqPhVP_e-2rbNJGg8qeUuLe4ODjzmjOm2lao5vWFametHrxFCHlv1_VtftmCLwlX_/exec?text=' + encodeURIComponent(text))
+                .then(res => alert('Sent to printer app!'))
+                .catch(err => alert('Error sending: ' + err));
+        }
+    </script>
+</body>
+</html>
