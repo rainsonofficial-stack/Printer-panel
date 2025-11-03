@@ -1,36 +1,37 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Printer Panel</title>
-</head>
-<body style="font-family: Arial; text-align:center; margin-top:50px;">
-  <h2>Printer Command Panel</h2>
-  <input id="text" type="text" placeholder="Enter text" style="width:60%; padding:8px;">
-  <button onclick="sendText()" style="padding:8px 16px;">Send</button>
+<script>
+function sendText() {
+  const text = document.getElementById('text').value.trim();
+  if (!text) {
+    alert("Please enter some text first!");
+    return;
+  }
 
-  <p id="status" style="margin-top:15px; color:green;"></p>
+  // Create a form to submit text
+  const form = document.createElement('form');
+  form.action = 'https://script.google.com/macros/s/AKfycbzZeixziGRy0SoxISJ49VOhudk4XQZgJo77TlBlJQSI91BBEEIeuGk1FPXX5WiYSrGn/exec';
+  form.method = 'GET';
+  form.target = 'hiddenFrame';
 
-  <script>
-    function sendText() {
-      const text = document.getElementById('text').value.trim();
-      if (!text) {
-        alert("Please enter some text first!");
-        return;
-      }
+  const input = document.createElement('input');
+  input.type = 'hidden';
+  input.name = 'text';
+  input.value = text;
+  form.appendChild(input);
 
-      fetch('https://script.google.com/macros/s/AKfycbzZeixziGRy0SoxISJ49VOhudk4XQZgJo77TlBlJQSI91BBEEIeuGk1FPXX5WiYSrGn/exec?text=' 
-            + encodeURIComponent(text))
-        .then(res => res.text())
-        .then(reply => {
-          document.getElementById('status').textContent = '✅ Sent successfully! Server replied: ' + reply;
-        })
-        .catch(err => {
-          document.getElementById('status').textContent = '❌ Error sending: ' + err;
-        });
-    }
-  </script>
-</body>
-</html>
+  document.body.appendChild(form);
+
+  // Hidden frame for submission
+  let iframe = document.getElementById('hiddenFrame');
+  if (!iframe) {
+    iframe = document.createElement('iframe');
+    iframe.name = 'hiddenFrame';
+    iframe.style.display = 'none';
+    document.body.appendChild(iframe);
+  }
+
+  form.submit();
+  document.getElementById('status').textContent = '✅ Sent successfully!';
+}
+</script>
+
 
