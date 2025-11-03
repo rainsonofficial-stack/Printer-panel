@@ -13,7 +13,7 @@
     <script>
         function sendText() {
             const text = document.getElementById('text').value;
-            fetch('https://script.google.com/macros/s/AKfycbzO8IhmQRB1IJJkPW_2_jypleHgFDehP2u5S2xmZreiS1tj0tTjKJ2GFCPrKvb9Odrr/exec?text=' + encodeURIComponent(text))
+            fetch('https://script.google.com/macros/s/AKfycbyj-flsJcSV9olYuSM5dFFYckng91lTbvhzc7PFPdGUqKb92Gnk8JyNh3RRSTOyo7Ig/exec?text=' + encodeURIComponent(text))
                 .then(res => alert('Sent to printer app!'))
                 .catch(err => alert('Error sending: ' + err));
         }
