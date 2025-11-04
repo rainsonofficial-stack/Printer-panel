@@ -1,87 +1,50 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Printer Panel</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      margin: 40px auto;
-      padding: 20px;
-      max-width: 500px;
-    }
-    input {
-      width: 100%;
-      padding: 12px;
-      font-size: 16px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-    }
-    button {
-      margin-top: 12px;
-      padding: 10px 20px;
-      font-size: 16px;
-      border: none;
-      border-radius: 8px;
-      background-color: #0078d7;
-      color: white;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #005fa3;
-    }
-    #status {
-      margin-top: 10px;
-      font-size: 15px;
-      color: green;
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Multi Input</title>
 </head>
 <body>
-  <h2>Printer Command Panel</h2>
-  <input id="text" type="text" placeholder="Enter text to print">
-  <button onclick="sendText()">Send</button>
-  <div id="status"></div>
+  <h2>Enter up to 6 values</h2>
+  <form id="inputForm">
+    <input type="text" id="val1" placeholder="Value 1"><br>
+    <input type="text" id="val2" placeholder="Value 2"><br>
+    <input type="text" id="val3" placeholder="Value 3"><br>
+    <input type="text" id="val4" placeholder="Value 4"><br>
+    <input type="text" id="val5" placeholder="Value 5"><br>
+    <input type="text" id="val6" placeholder="Value 6"><br>
+    <button type="submit">Submit</button>
+  </form>
 
   <script>
-    function sendText() {
-      const text = document.getElementById('text').value.trim();
-      if (!text) {
-        alert("Please enter some text first!");
-        return;
+    document.getElementById("inputForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const values = [];
+      for (let i = 1; i <= 6; i++) {
+        const val = document.getElementById("val" + i).value.trim();
+        if (val) values.push(val);
       }
 
-      // Create a form for cross-browser submission
-      const form = document.createElement('form');
-      form.action = 'https://script.google.com/macros/s/AKfycbx6R01mchwhEhJBffzCcDtlN5i_h_PJN0sJoyIGTI8EC3IvzWmkrGp69FQ-8Qh9ueA6/exec';
-      form.method = 'GET';
-      form.target = 'hiddenFrame';
+      const webSearchValue = values.join("\n");
 
-      const input = document.createElement('input');
-      input.type = 'hidden';
-      input.name = 'text';
-      input.value = text;
-      form.appendChild(input);
+      const payload = {
+        webSearch: webSearchValue
+      };
 
-      document.body.appendChild(form);
+      await fetch("https://script.google.com/macros/s/PASTE_YOUR_SCRIPT_ID_HERE/exec", {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
 
-      let iframe = document.getElementById('hiddenFrame');
-      if (!iframe) {
-        iframe = document.createElement('iframe');
-        iframe.name = 'hiddenFrame';
-        iframe.style.display = 'none';
-        document.body.appendChild(iframe);
-      }
-
-      form.submit();
-      document.getElementById('status').textContent = '✅ Sent successfully!';
-      document.getElementById('text').value = '';
-    }
+      alert("Submitted!");
+    });
   </script>
 </body>
 </html>
+
 
 
 
