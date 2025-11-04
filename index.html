@@ -13,22 +13,30 @@
             background-color: #000000;
             margin: 0;
             padding: 0;
-            overflow-x: hidden;
+            overflow-x: hidden; /* Prevent horizontal scroll on mobile */
+            -webkit-user-select: none; /* Prevent selection */
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            touch-action: pan-y; /* Allow vertical scrolling */
         }
+
         /* Styling for the Password Card */
         .glass-card {
-            background-color: rgba(255, 255, 255, 0.08);
+            background-color: rgba(255, 255, 255, 0.08); /* Transparent white */
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.15);
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
         }
+
         /* Ensure images fit the container width */
         .responsive-image {
             width: 100%;
             height: auto;
             display: block;
         }
-        /* Utility to make the main page full screen but scrollable */
+
+        /* Set the main page to cover the viewport for touch calculation */
         #main-page {
             min-height: 100vh;
         }
@@ -64,10 +72,17 @@
     </div>
 
     <!-- 2. Main Page (Secret Grid + Scrollable Content) -->
-    <!-- Removed the visible debug box for stealth mode -->
-    <div id="main-page" class="hidden bg-black text-white p-0 relative" 
-         ontouchstart="handleInput(event)" onmousedown="handleInput(event)">
+    <!-- The entire viewport acts as the invisible 3x3 grid for touch detection -->
+    <div id="main-page" 
+         class="hidden bg-black text-white p-0 relative" 
+         ontouchstart="handleInput(event)" 
+         onmousedown="handleInput(event)">
         
+        <!-- Discreet Debug Confirmation (Hidden from audience) -->
+        <div id="status-box" class="fixed top-0 left-0 w-full p-2 text-center text-sm font-semibold transition-opacity duration-500 bg-green-900 text-green-300 opacity-0 z-50">
+            Prediction Sent
+        </div>
+
         <!-- Scrollable Images (The Distraction) -->
         <div id="image-container" class="mt-0">
             <!-- Images will be inserted here by JavaScript -->
@@ -78,11 +93,13 @@
     <script>
         // --- Configuration ---
         const CORRECT_PASSWORD = 'MagicRain';
-        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzsroivuM0dDHb7T3lmsR4HeHtDXEEGYWoZKWtd4ZHvq0V07x5aitArqLlGoV9GGRaW/exec';
+        // USE YOUR CONFIRMED GOOGLE APPS SCRIPT URL HERE
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzsroivuM0dDHb7T3lmsR4HeHtDXEEGYWoZKWtd4ZHvq0V07x5aitArqLlGoV9GGRaW/exec'; 
 
         // --- State Variables ---
         const recordedCode = [];
         let isCodeSent = false;
+        let isProcessing = false; // Prevents spamming sendCode
 
         // --- DOM Elements ---
         const passwordPage = document.getElementById('password-page');
@@ -90,17 +107,23 @@
         const passwordInput = document.getElementById('magic-word-input');
         const passwordStatus = document.getElementById('password-status');
         const imageContainer = document.getElementById('image-container');
+        const statusBox = document.getElementById('status-box');
+
 
         // --- Functions ---
-        
+
         function generateImages() {
-            const imageNumbers = [101, 102, 103, 104, 105, 106];
+            // Using a timestamp to ensure fresh images on reload
+            const timestamp = Date.now(); 
+            const imageNumbers = [1, 2, 3, 4, 5, 6].map(i => 100 + i); // Use 101-106 as base
+
             imageContainer.innerHTML = ''; 
 
             imageNumbers.forEach(num => {
                 const img = document.createElement('img');
-                img.src = `https://picsum.photos/1080/1920?random=${num}`; 
-                img.classList.add('responsive-image', 'mb-2'); 
+                // Append timestamp to ensure we get a new random image each time
+                img.src = `https://picsum.photos/1080/1920?random=${num}&t=${timestamp}`; 
+                img.classList.add('responsive-image', 'mb-2');
                 imageContainer.appendChild(img);
             });
         }
@@ -111,7 +134,8 @@
                 passwordPage.classList.add('hidden');
                 mainPage.classList.remove('hidden');
                 generateImages();
-                console.log('Main page unlocked. Grid listener is active.');
+                console.log('Main page unlocked. Input listener is active.');
+
             } else {
                 passwordInput.value = '';
                 passwordStatus.textContent = '❌ Invalid key. Try again.';
@@ -121,6 +145,28 @@
             }
         }
 
+        /**
+         * Determines if the input is a touch or a mouse click and returns the coordinates.
+         * @param {Event} event The touch or mouse event.
+         * @returns {{x: number, y: number} | null} Coordinates or null.
+         */
+        function getCoordinates(event) {
+            if (event.touches && event.touches.length > 0) {
+                // Touch event (mobile)
+                return { x: event.touches[0].clientX, y: event.touches[0].clientY };
+            } else if (event instanceof MouseEvent) {
+                // Mouse event (desktop)
+                return { x: event.clientX, y: event.clientY };
+            }
+            return null;
+        }
+
+        /**
+         * Maps touch/click coordinates to the 3x3 grid position (1-9).
+         * @param {number} x The clientX coordinate.
+         * @param {number} y The clientY coordinate.
+         * @returns {number} The grid position (1-9).
+         */
         function getGridPosition(x, y) {
             const width = window.innerWidth;
             const height = window.innerHeight;
@@ -128,77 +174,104 @@
             const widthUnit = width / 3;
             const heightUnit = height / 3;
 
+            // Determine column (0, 1, or 2)
             const col = Math.floor(x / widthUnit);
+            // Determine row (0, 1, or 2)
             const row = Math.floor(y / heightUnit);
             
+            // Grid positions: 1 2 3 / 4 5 6 / 7 8 9
             return (row * 3) + col + 1; 
         }
 
+        /**
+         * Handles the touch/mouse input event to record the secret code.
+         * @param {Event} event 
+         */
         function handleInput(event) {
+            // Stop processing if code is complete or already sent
             if (recordedCode.length >= 3 || isCodeSent) {
                 return;
             }
 
-            let x, y;
+            const coords = getCoordinates(event);
+            if (!coords) return;
 
-            if (event.type.startsWith('touch')) {
-                const touch = event.touches[0];
-                x = touch.clientX;
-                y = touch.clientY;
-            } else if (event.type === 'mousedown') {
-                x = event.clientX;
-                y = event.clientY;
-            } else {
-                return;
-            }
+            const gridDigit = getGridPosition(coords.x, coords.y);
 
-            const gridDigit = getGridPosition(x, y);
-
+            // Ensure the digit is unique and add it
             if (!recordedCode.includes(gridDigit)) {
                 recordedCode.push(gridDigit);
-                
+                console.log(`Touch recorded. Current code: ${recordedCode.join('')} (${recordedCode.length}/3)`);
+
+                // Check if the code is complete (3 unique inputs)
                 if (recordedCode.length === 3) {
                     const finalCode = recordedCode.join('');
-                    console.log(`Code complete: ${finalCode}. Triggering send.`);
+                    console.log(`Code complete: ${finalCode}. Triggering POST send.`);
                     sendCode(finalCode);
                 }
             }
         }
 
         /**
-         * Sends the recorded code using the Image() ping method with a forced execution parameter.
-         * The 'random_param' is designed to defeat Google's aggressive caching.
+         * Sends the recorded code to the Google Apps Script using a reliable POST fetch request.
          * @param {string} code The 3-digit code to send.
          */
         function sendCode(code) {
-            if (isCodeSent) return;
-
-            // Use 'random_param' to force the Apps Script server to execute fresh code.
-            const url = `${GOOGLE_SCRIPT_URL}?user=pots&code=${encodeURIComponent(code)}&random_param=${Date.now()}`;
+            if (isCodeSent || isProcessing) return;
+            isProcessing = true;
             
-            // NOTE: Console logging remains active for final confirmation if needed.
-            console.log(`Attempting Final Cache-Busting URL: ${url}`);
-
-            // Use new Image()
-            const img = new Image();
-            img.onload = img.onerror = () => {
-                console.log(`Transmission attempt complete for code: ${code}. Check your printer!`);
-                isCodeSent = true;
+            // The JSON payload to send in the request body
+            const payload = {
+                user: "pots",
+                code: code
             };
-            img.src = url;
-            
-            mainPage.ontouchstart = null;
-            mainPage.onmousedown = null;
+
+            fetch(GOOGLE_SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors', // Critical for cross-origin Apps Script access
+                cache: 'no-cache',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(response => {
+                // Since 'no-cors' mode is used, we cannot inspect response.ok or response.status.
+                // We must assume that if fetch didn't throw a network error, the data was sent.
+                console.log(`POST attempt finished for code: ${code}. The script should have executed.`);
+                isCodeSent = true;
+                isProcessing = false;
+                
+                // Show confirmation message
+                statusBox.textContent = `CODE SENT: ${code}`;
+                statusBox.classList.remove('opacity-0');
+                setTimeout(() => {
+                    statusBox.classList.add('opacity-0');
+                }, 4000);
+
+                // Disable further input
+                mainPage.ontouchstart = null;
+                mainPage.onmousedown = null;
+            })
+            .catch(error => {
+                // Log and show error if the network request fails entirely
+                console.error('Network error during POST request:', error);
+                statusBox.textContent = `ERROR: Network failure. Code: ${code}`;
+                statusBox.classList.remove('opacity-0');
+                isProcessing = false;
+            });
         }
 
         // --- Initialization ---
         window.onload = () => {
+             // Listener for Enter key on the password page
             passwordInput.addEventListener('keypress', (event) => {
                 if (event.key === 'Enter') {
                     checkPassword();
                 }
             });
         };
+
     </script>
 </body>
 </html>
