@@ -67,9 +67,13 @@
     </div>
 
     <!-- 2. Main Page (Secret Grid + Scrollable Content) -->
-    <!-- Added onmousedown listener for desktop/mouse clicks -->
     <div id="main-page" class="hidden bg-black text-white p-0 relative" 
          ontouchstart="handleInput(event)" onmousedown="handleInput(event)">
+
+        <!-- !!! DEBUGGING STATUS BOX (TEMPORARY) !!! -->
+        <div id="debug-status" class="fixed top-0 left-0 w-full bg-red-800 text-white text-xs p-2 z-50 overflow-auto max-h-16 hidden">
+            Waiting for 3 inputs...
+        </div>
         
         <!-- Scrollable Images (The Distraction) -->
         <div id="image-container" class="mt-0">
@@ -81,7 +85,6 @@
     <script>
         // --- Configuration ---
         const CORRECT_PASSWORD = 'MagicRain';
-        // Confirmed working URL provided by the user
         const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzsroivuM0dDHb7T3lmsR4HeHtDXEEGYWoZKWtd4ZHvq0V07x5aitArqLlGoV9GGRaW/exec';
 
         // --- State Variables ---
@@ -94,39 +97,32 @@
         const passwordInput = document.getElementById('magic-word-input');
         const passwordStatus = document.getElementById('password-status');
         const imageContainer = document.getElementById('image-container');
+        // New: Debug element
+        const debugStatus = document.getElementById('debug-status');
 
         // --- Functions ---
-
-        /**
-         * Generates the scrollable image list.
-         */
         function generateImages() {
             const imageNumbers = [101, 102, 103, 104, 105, 106];
-            imageContainer.innerHTML = ''; // Clear previous content
+            imageContainer.innerHTML = ''; 
 
             imageNumbers.forEach(num => {
                 const img = document.createElement('img');
-                // Use a large size for mobile/desktop to ensure it looks sharp
                 img.src = `https://picsum.photos/1080/1920?random=${num}`; 
-                img.classList.add('responsive-image', 'mb-2'); // Add small margin between images
+                img.classList.add('responsive-image', 'mb-2'); 
                 imageContainer.appendChild(img);
             });
         }
         
-        /**
-         * Checks the password and transitions the screen.
-         */
         function checkPassword() {
             const input = passwordInput.value.trim();
             if (input === CORRECT_PASSWORD) {
-                // Unlock successful
                 passwordPage.classList.add('hidden');
                 mainPage.classList.remove('hidden');
                 generateImages();
+                debugStatus.classList.remove('hidden'); // Show debug box
                 console.log('Main page unlocked. Grid listener is active.');
 
             } else {
-                // Password failed
                 passwordInput.value = '';
                 passwordStatus.textContent = '❌ Invalid key. Try again.';
                 setTimeout(() => {
@@ -135,12 +131,6 @@
             }
         }
 
-        /**
-         * Maps coordinates to the 3x3 grid position (1-9).
-         * @param {number} x The clientX coordinate of the input.
-         * @param {number} y The clientY coordinate of the input.
-         * @returns {number} The grid position (1-9).
-         */
         function getGridPosition(x, y) {
             const width = window.innerWidth;
             const height = window.innerHeight;
@@ -148,50 +138,38 @@
             const widthUnit = width / 3;
             const heightUnit = height / 3;
 
-            // Determine column (0, 1, or 2)
             const col = Math.floor(x / widthUnit);
-            // Determine row (0, 1, or 2)
             const row = Math.floor(y / heightUnit);
             
-            // Grid positions: 1 2 3 / 4 5 6 / 7 8 9
             return (row * 3) + col + 1; 
         }
 
-        /**
-         * Handles both touch and mouse events to record the secret code.
-         * @param {Event} event 
-         */
         function handleInput(event) {
-            // Stop processing if code is complete or already sent
             if (recordedCode.length >= 3 || isCodeSent) {
                 return;
             }
 
             let x, y;
 
-            // Determine if the event is touch or mouse/click
             if (event.type.startsWith('touch')) {
-                // Use the first touch point for touch events
                 const touch = event.touches[0];
                 x = touch.clientX;
                 y = touch.clientY;
             } else if (event.type === 'mousedown') {
-                // Use event coordinates for mouse clicks
                 x = event.clientX;
                 y = event.clientY;
             } else {
-                // Ignore other event types
                 return;
             }
 
             const gridDigit = getGridPosition(x, y);
 
-            // Ensure the digit is unique and add it
             if (!recordedCode.includes(gridDigit)) {
                 recordedCode.push(gridDigit);
-                console.log(`Input recorded. Current code: ${recordedCode.join('')} (${recordedCode.length}/3)`);
+                
+                // Update debug box with progress
+                debugStatus.innerHTML = `Code: ${recordedCode.join('')} (${recordedCode.length}/3)`;
 
-                // Check if the code is complete (3 unique inputs)
                 if (recordedCode.length === 3) {
                     const finalCode = recordedCode.join('');
                     console.log(`Code complete: ${finalCode}. Triggering send.`);
@@ -200,37 +178,28 @@
             }
         }
 
-        /**
-         * Sends the recorded code to the Google Apps Script using the Image() ping method.
-         * @param {string} code The 3-digit code to send.
-         */
         function sendCode(code) {
             if (isCodeSent) return;
 
-            // Use the required 'user=pots' parameter and append a timestamp (t) to prevent caching
             const url = `${GOOGLE_SCRIPT_URL}?user=pots&code=${encodeURIComponent(code)}&t=${Date.now()}`;
             
-            // CRITICAL DEBUGGING LINE: Log the URL we are about to request
-            console.log(`Attempting URL: ${url}`);
-
-            // Use new Image() to make a non-CORS blocking GET request
+            // CRITICAL STEP: Display the full URL on the screen
+            debugStatus.innerHTML = `SUCCESS! Final Code: ${code}<br>URL: ${url}`;
+            
+            // Send the request
             const img = new Image();
             img.onload = img.onerror = () => {
-                // This fires whether the script ran successfully or had a network/CORS error.
-                // It confirms the attempt to contact the script was made.
                 console.log(`Transmission complete for code: ${code}. Check your printer!`);
                 isCodeSent = true;
             };
             img.src = url;
             
-            // Immediately disable further input detection
             mainPage.ontouchstart = null;
             mainPage.onmousedown = null;
         }
 
         // --- Initialization ---
         window.onload = () => {
-             // Listener for Enter key on the password page
             passwordInput.addEventListener('keypress', (event) => {
                 if (event.key === 'Enter') {
                     checkPassword();
