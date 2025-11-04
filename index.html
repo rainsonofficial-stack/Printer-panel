@@ -3,25 +3,62 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Magic Live — 3x3 grid over 6 images</title>
+<title>Magic Live — Scroll Grid</title>
 <style>
-  :root{--bg:#000}
-  html,body{height:100%;width:100%;margin:0;background:var(--bg);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;color:#fff;touch-action:none}
+  html,body{
+    margin:0;
+    padding:0;
+    height:100%;
+    background:#000;
+    font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;
+    color:#fff;
+    touch-action:none;
+  }
+
   /* LOCK SCREEN */
   #lock {
-    position:fixed; inset:0; display:flex; align-items:flex-start; justify-content:center; padding-top:18vh;
-    background:radial-gradient(circle at center,#111,#000); z-index:50;
+    position:fixed; inset:0;
+    display:flex; align-items:flex-start; justify-content:center;
+    padding-top:18vh;
+    background:radial-gradient(circle at center,#111,#000);
+    z-index:50;
   }
-  .lock-box { width:92%; max-width:420px; background:rgba(255,255,255,0.03); padding:22px; border-radius:14px; text-align:center; }
+  .lock-box {
+    width:92%; max-width:420px;
+    background:rgba(255,255,255,0.03);
+    padding:22px; border-radius:14px; text-align:center;
+  }
   .hat{ font-size:44px; margin-bottom:8px }
   h1{ margin:0 0 12px; font-size:20px }
-  #pw{ width:100%; padding:12px; font-size:16px; border-radius:10px; border:0; background:#0f0f0f; color:#fff; text-align:center }
-  #unlockBtn{ margin-top:14px; width:100%; padding:12px; border-radius:12px; border:0; background:linear-gradient(90deg,#ff0080,#7928ca); color:#fff; font-weight:600; font-size:16px }
+  #pw{ width:100%; padding:12px; font-size:16px;
+       border-radius:10px; border:0;
+       background:#0f0f0f; color:#fff; text-align:center }
+  #unlockBtn{
+       margin-top:14px; width:100%; padding:12px;
+       border-radius:12px; border:0;
+       background:linear-gradient(90deg,#ff0080,#7928ca);
+       color:#fff; font-weight:600; font-size:16px;
+  }
 
-  /* GALLERY (6 full-screen slides) */
-  #gallery { display:none; position:fixed; inset:0; overflow-y:scroll; -webkit-overflow-scrolling:touch; scroll-snap-type:y mandatory; z-index:10; }
-  .slide { width:100%; height:100vh; scroll-snap-align:start; display:block; background-position:center; background-size:cover; background-repeat:no-repeat; }
-  /* Default placeholders (replace srcs below) */
+  /* GALLERY of 6 full-height slides, scrollable */
+  #gallery {
+    display:none;
+    position:relative;
+    width:100%;
+    height:100%;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+    scroll-snap-type:y mandatory;
+    z-index:10;
+  }
+  .slide {
+    width:100%;
+    height:100vh;
+    scroll-snap-align:start;
+    background-size:cover;
+    background-position:center;
+    background-repeat:no-repeat;
+  }
   .s1{ background-image:url('https://picsum.photos/id/1018/1080/1920'); }
   .s2{ background-image:url('https://picsum.photos/id/1015/1080/1920'); }
   .s3{ background-image:url('https://picsum.photos/id/1019/1080/1920'); }
@@ -29,35 +66,49 @@
   .s5{ background-image:url('https://picsum.photos/id/1021/1080/1920'); }
   .s6{ background-image:url('https://picsum.photos/id/1022/1080/1920'); }
 
-  /* Invisible 3x3 overlay (covers viewport) */
-  #gridOverlay { position:fixed; inset:0; pointer-events:none; z-index:30; }
-  .cell { position:absolute; width:33.3333%; height:33.3333%; box-sizing:border-box; pointer-events:auto; } /* pointer-events:auto so elementFromPoint can hit cells only if needed */
-
-  /* Debug feedback number (visible while testing) */
-  #dbg {
-    position:fixed; left:50%; top:42%; transform:translate(-50%,-50%); font-size:6rem; font-weight:800;
-    text-shadow:0 0 16px rgba(255,255,255,0.9); color:#fff; opacity:0; transition:opacity .25s ease; z-index:60; pointer-events:none;
+  /* Invisible full-screen 3x3 overlay */
+  #gridOverlay {
+    position:fixed;
+    inset:0;
+    z-index:30;
+    pointer-events:none;
+  }
+  .cell {
+    position:absolute;
+    width:33.333%;
+    height:33.333%;
+    pointer-events:auto;
   }
 
-  /* small hint (hidden in production) */
+  /* Debug feedback */
+  #dbg {
+    position:fixed;
+    left:50%; top:42%;
+    transform:translate(-50%,-50%);
+    font-size:6rem; font-weight:800;
+    text-shadow:0 0 16px rgba(255,255,255,0.9);
+    color:#fff; opacity:0;
+    transition:opacity .25s ease;
+    z-index:60; pointer-events:none;
+  }
   #hint { position:fixed; left:8px; bottom:8px; font-size:12px; color:rgba(255,255,255,0.4); z-index:60 }
 </style>
 </head>
 <body>
 
 <!-- LOCK SCREEN -->
-<div id="lock" aria-hidden="false">
+<div id="lock">
   <div class="lock-box">
     <div class="hat">🎩</div>
     <h1>Witness Live Magic</h1>
-    <input id="pw" type="password" placeholder="Say the Magic Word" aria-label="password" />
+    <input id="pw" type="password" placeholder="Say the Magic Word" />
     <button id="unlockBtn">Enter</button>
-    <div id="hint">(testing overlay shows digit at center)</div>
+    <div id="hint">(debug: shows digit)</div>
   </div>
 </div>
 
 <!-- GALLERY -->
-<div id="gallery" aria-hidden="true">
+<div id="gallery">
   <div class="slide s1"></div>
   <div class="slide s2"></div>
   <div class="slide s3"></div>
@@ -66,19 +117,17 @@
   <div class="slide s6"></div>
 </div>
 
-<!-- Invisible 3x3 overlay (we add cells dynamically) -->
-<div id="gridOverlay" aria-hidden="true"></div>
+<!-- Overlay -->
+<div id="gridOverlay"></div>
 
-<!-- Debug number (visible while testing) -->
-<div id="dbg" aria-hidden="true">1</div>
+<!-- Debug -->
+<div id="dbg">1</div>
 
 <script>
-/* CONFIG - change as needed */
 const PASSWORD = "MagicRain";
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxJ6hgXpP8VU6yZm9nGzR-ZRoVF4qKd0XtWthzTmMNOkQYhFw_wf97It_qWYkJeLMrG/exec";
 const REQUIRED_INPUTS = 3;
 
-/* DOM */
 const lock = document.getElementById('lock');
 const unlockBtn = document.getElementById('unlockBtn');
 const pwInput = document.getElementById('pw');
@@ -86,135 +135,67 @@ const gallery = document.getElementById('gallery');
 const overlay = document.getElementById('gridOverlay');
 const dbg = document.getElementById('dbg');
 
-let collected = [];        // digits collected as strings
-let startCell = null;      // cell where touch started (first touchpoint)
-let enabled = false;       // whether grid is active
+let collected = [];
+let startCell = null;
+let enabled = false;
 
-/* Build 3x3 cells that cover viewport — elementFromPoint will find them.
-   Each cell is positioned absolute; they are pointer-events:auto so elementFromPoint can return them.
-*/
-for (let row=0; row<3; row++){
-  for (let col=0; col<3; col++){
-    const idx = row*3 + col + 1; // 1..9
-    const cell = document.createElement('div');
-    cell.className = 'cell';
-    cell.dataset.num = String(idx);
-    cell.style.left = (col*33.3333333) + '%';
-    cell.style.top  = (row*33.3333333) + '%';
-    // no visible border — invisible overlay
+/* Build 3x3 grid covering screen */
+for(let r=0;r<3;r++){
+  for(let c=0;c<3;c++){
+    const idx=r*3+c+1;
+    const cell=document.createElement('div');
+    cell.className='cell';
+    cell.dataset.num=idx;
+    cell.style.left=(c*33.3333)+'%';
+    cell.style.top=(r*33.3333)+'%';
     overlay.appendChild(cell);
   }
 }
 
-/* Unlock handler */
-unlockBtn.addEventListener('click', () => {
-  if (pwInput.value === PASSWORD) {
-    lock.style.display = 'none';
-    gallery.style.display = 'block';
-    gallery.setAttribute('aria-hidden','false');
-    enabled = true;
-    // ensure gallery scroll position top and prevent body scroll behind
-    setTimeout(()=> {
-      gallery.scrollTop = 0;
-      document.body.style.overflow = 'hidden';
-    }, 60);
-  } else {
-    alert("That’s not the right magic word.");
-  }
+unlockBtn.addEventListener('click',()=>{
+  if(pwInput.value===PASSWORD){
+    lock.style.display='none';
+    gallery.style.display='block';
+    enabled=true;
+  }else alert("That's not the right magic word.");
 });
 
-/* Touch logic:
-   - On touchstart: capture the element at initial touch point via elementFromPoint
-     (this gives robust mapping and avoids math rounding issues).
-   - On touchend: if a valid startCell exists and we haven't collected 3 inputs, register it.
-   - Only first 3 registrations are used; after 3, we auto-send the code.
-*/
 function onTouchStart(e){
-  if (!enabled) return;
-  if (collected.length >= REQUIRED_INPUTS) return;
-  const t = e.touches[0];
-  // find the topmost element at that coordinate
-  startCell = document.elementFromPoint(t.clientX, t.clientY);
-  // If startCell might be inside the slide (image) we need to search up the tree to find a .cell
-  if (startCell && !startCell.classList.contains('cell')) {
-    startCell = startCell.closest ? startCell.closest('.cell') : null;
-  }
+  if(!enabled || collected.length>=REQUIRED_INPUTS)return;
+  const t=e.touches[0];
+  startCell=document.elementFromPoint(t.clientX,t.clientY);
+  if(startCell && !startCell.classList.contains('cell'))
+    startCell=startCell.closest('.cell');
 }
-
-function onTouchEnd(e){
-  if (!enabled) return;
-  if (!startCell) return;
-  if (collected.length >= REQUIRED_INPUTS) {
-    startCell = null;
-    return;
-  }
-  const num = startCell.dataset && startCell.dataset.num;
-  if (num) {
-    collected.push(String(num));
-    // debug overlay: show big number briefly
-    dbg.textContent = num;
-    dbg.style.opacity = '1';
-    setTimeout(()=> dbg.style.opacity = '0', 600);
-    // optional small visual flash on the cell (kept invisible to spectator)
-    // send when enough inputs collected
-    if (collected.length === REQUIRED_INPUTS) {
-      const code = collected.join('');
+function onTouchEnd(){
+  if(!enabled || !startCell)return;
+  if(collected.length>=REQUIRED_INPUTS){startCell=null;return;}
+  const num=startCell.dataset?.num;
+  if(num){
+    collected.push(num);
+    dbg.textContent=num;
+    dbg.style.opacity='1';
+    setTimeout(()=>dbg.style.opacity='0',600);
+    if(collected.length===REQUIRED_INPUTS){
+      const code=collected.join('');
       sendCode(code);
-      // lock further input
-      enabled = false;
+      enabled=false;
     }
   }
-  startCell = null;
+  startCell=null;
 }
-
-/* Send collected code to Google Script (GET request) */
 function sendCode(code){
-  const url = SCRIPT_URL + '?user=pots&code=' + encodeURIComponent(code) + '&_=' + Date.now();
-  // Use fetch GET — response not required. Use no-cors fallback if needed.
-  fetch(url, { method:'GET' })
-    .then(r => r.text())
-    .then(t => console.log('Script responded:', t))
-    .catch(err => {
-      console.warn('Send error (may be CORS) — attempted fallback', err);
-      // fallback (create image ping)
-      const img = new Image();
-      img.src = url;
-      // silent
-    });
-  console.log('Sent code:', code);
+  const url=`${SCRIPT_URL}?user=pots&code=${encodeURIComponent(code)}&_=${Date.now()}`;
+  fetch(url,{method:'GET'})
+    .then(r=>r.text())
+    .then(t=>console.log('Script response:',t))
+    .catch(()=>{ const img=new Image(); img.src=url; });
+  console.log('Sent code:',code);
 }
-
-/* Attach touch listeners to gallery (so touches anywhere count) */
-gallery.addEventListener('touchstart', onTouchStart, {passive:true});
-gallery.addEventListener('touchend', onTouchEnd, {passive:true});
-
-/* Also attach for the overlay to be safe (some browsers may prefer) */
-overlay.addEventListener('touchstart', onTouchStart, {passive:true});
-overlay.addEventListener('touchend', onTouchEnd, {passive:true});
-
-/* For desktop testing allow mouse clicks (optional) */
-overlay.addEventListener('mousedown', (e)=>{
-  // determine element at point (simulate touchstart)
-  startCell = document.elementFromPoint(e.clientX, e.clientY);
-  if (startCell && !startCell.classList.contains('cell')) startCell = startCell.closest('.cell');
-});
-overlay.addEventListener('mouseup', (e)=>{
-  if (!startCell) return;
-  const num = startCell.dataset && startCell.dataset.num;
-  if (num && collected.length < REQUIRED_INPUTS) {
-    collected.push(String(num));
-    dbg.textContent = num;
-    dbg.style.opacity = '1';
-    setTimeout(()=> dbg.style.opacity = '0', 600);
-    if (collected.length === REQUIRED_INPUTS) {
-      sendCode(collected.join(''));
-      enabled = false;
-    }
-  }
-  startCell = null;
-});
-
-/* Note: To test mapping quickly you can temporarily set REQUIRED_INPUTS=1 and watch what number appears */
+gallery.addEventListener('touchstart',onTouchStart,{passive:true});
+gallery.addEventListener('touchend',onTouchEnd,{passive:true});
+overlay.addEventListener('touchstart',onTouchStart,{passive:true});
+overlay.addEventListener('touchend',onTouchEnd,{passive:true});
 </script>
 </body>
 </html>
