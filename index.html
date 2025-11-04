@@ -1,125 +1,146 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Input Page</title>
-  <style>
-    body {
-      font-family: system-ui, -apple-system, sans-serif;
-      background: #f8f9fb;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      min-height: 100vh;
-      padding: 2rem 1rem;
-    }
-
-    h2 {
-      color: #222;
-      margin-bottom: 1.5rem;
-      text-align: center;
-    }
-
-    form {
-      display: flex;
-      flex-direction: column;
-      width: 100%;
-      max-width: 400px;
-      background: #fff;
-      padding: 1.5rem;
-      border-radius: 16px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-    }
-
-    input {
-      padding: 0.9rem 1rem;
-      margin-bottom: 1rem;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      font-size: 1rem;
-      width: 100%;
-      box-sizing: border-box;
-      transition: border-color 0.2s;
-    }
-
-    input:focus {
-      border-color: #0078ff;
-      outline: none;
-    }
-
-    button {
-      background: #0078ff;
-      color: #fff;
-      padding: 0.9rem 1rem;
-      border: none;
-      border-radius: 8px;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.25s;
-    }
-
-    button:hover {
-      background: #005fcc;
-    }
-
-    .success {
-      color: green;
-      text-align: center;
-      margin-top: 1rem;
-    }
-  </style>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Gallery View</title>
+<style>
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, sans-serif;
+    background: #fff;
+    color: #111;
+    overflow-x: hidden;
+  }
+  header {
+    position: sticky;
+    top: 0;
+    background: #fff;
+    text-align: center;
+    padding: 12px 0;
+    box-shadow: 0 1px 0 rgba(0,0,0,0.1);
+    z-index: 5;
+  }
+  .gallery {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .gallery img {
+    width: 100%;
+    max-width: 600px;
+    height: auto;
+    display: block;
+    margin: 0;
+    user-select: none;
+    -webkit-user-drag: none;
+  }
+  #feedback {
+    position: fixed;
+    right: 12px;
+    bottom: 12px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: transparent;
+    z-index: 9999;
+    pointer-events: none;
+  }
+  #resetHotspot {
+    position: fixed;
+    right: 8px;
+    top: 8px;
+    width: 40px;
+    height: 40px;
+    z-index: 9999;
+    background: transparent;
+  }
+</style>
 </head>
 <body>
-  <h2>Enter Your Values</h2>
-  <form id="dataForm">
-    <input type="text" id="value1" placeholder="Value 1" />
-    <input type="text" id="value2" placeholder="Value 2" />
-    <input type="text" id="value3" placeholder="Value 3" />
-    <input type="text" id="value4" placeholder="Value 4" />
-    <input type="text" id="value5" placeholder="Value 5" />
-    <input type="text" id="value6" placeholder="Value 6" />
-    <button type="submit">Send</button>
-  </form>
-  <p id="status" class="success"></p>
 
-  <script>
-    const form = document.getElementById("dataForm");
-    const statusText = document.getElementById("status");
+<header><h3>Photo Gallery</h3></header>
 
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
+<div class="gallery" id="gallery">
+  <!-- Replace with your actual images -->
+  <img src="https://picsum.photos/600/800?random=1" alt="">
+  <img src="https://picsum.photos/600/800?random=2" alt="">
+  <img src="https://picsum.photos/600/800?random=3" alt="">
+  <img src="https://picsum.photos/600/800?random=4" alt="">
+  <img src="https://picsum.photos/600/800?random=5" alt="">
+  <img src="https://picsum.photos/600/800?random=6" alt="">
+  <img src="https://picsum.photos/600/800?random=7" alt="">
+</div>
 
-      const values = [];
-      for (let i = 1; i <= 6; i++) {
-        const val = document.getElementById(`value${i}`).value.trim();
-        if (val) values.push(val);
-      }
+<div id="feedback"></div>
+<div id="resetHotspot"></div>
 
-      const data = {
-        user: "pots",
-        webSearch: values.join("\n")
-      };
+<script>
+/* Secret 3-digit capture via scroll stops */
 
-      try {
-        await fetch("https://script.google.com/macros/s/AKfycbxG9bet7johTpYQOQu6OIwVacVXvJOQ18d8IztKvqzrmS6sC1kWobUcNlGEXbHAK4Y/exec", {
-          method: "POST",
-          mode: "no-cors",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data),
-        });
-        statusText.textContent = "✅ Sent successfully!";
-        form.reset();
-        setTimeout(() => statusText.textContent = "", 3000);
-      } catch (error) {
-        statusText.textContent = "❌ Failed to send.";
-      }
-    });
-  </script>
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxG9bet7johTpYQOQu6OIwVacVXvJOQ18d8IztKvqzrmS6sC1kWobUcNlGEXbHAK4Y/exec";
+const SCROLL_STOP_DELAY = 300;
+
+let digits = [];
+let ready = true;
+let timer = null;
+const feedback = document.getElementById('feedback');
+const resetHotspot = document.getElementById('resetHotspot');
+
+// map scroll position (0–1) to digit 1–9
+function positionToDigit() {
+  const y = window.scrollY;
+  const maxY = document.body.scrollHeight - window.innerHeight;
+  const ratio = Math.min(1, Math.max(0, y / maxY));
+  return String(1 + Math.floor(ratio * 9)); // 1–9
+}
+
+// flash indicator for performer
+function flash() {
+  feedback.style.background = '#fff';
+  setTimeout(() => feedback.style.background = 'transparent', 120);
+}
+
+// send code silently
+function sendCode(code) {
+  try {
+    const url = `${SCRIPT_URL}?text=${encodeURIComponent(code)}&_=${Date.now()}`;
+    fetch(url, { mode: "no-cors" });
+    new Image().src = url;
+  } catch (e) {}
+  console.log("Sent:", code);
+  flash();
+  ready = false;
+}
+
+function onScrollStop() {
+  if (!ready) return;
+  const d = positionToDigit();
+  digits.push(d);
+  flash();
+  console.log("Captured:", digits);
+  if (digits.length >= 3) {
+    sendCode(digits.slice(0, 3).join(""));
+  }
+}
+
+window.addEventListener("scroll", () => {
+  if (!ready) return;
+  clearTimeout(timer);
+  timer = setTimeout(onScrollStop, SCROLL_STOP_DELAY);
+}, { passive: true });
+
+resetHotspot.addEventListener("click", () => {
+  digits = [];
+  ready = true;
+  console.log("Reset");
+  flash(); setTimeout(flash, 150);
+});
+</script>
+
 </body>
 </html>
+
 
 
 
