@@ -1,145 +1,107 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Gallery View</title>
-<style>
-  body {
-    margin: 0;
-    font-family: system-ui, -apple-system, sans-serif;
-    background: #fff;
-    color: #111;
-    overflow-x: hidden;
-  }
-  header {
-    position: sticky;
-    top: 0;
-    background: #fff;
-    text-align: center;
-    padding: 12px 0;
-    box-shadow: 0 1px 0 rgba(0,0,0,0.1);
-    z-index: 5;
-  }
-  .gallery {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-  .gallery img {
-    width: 100%;
-    max-width: 600px;
-    height: auto;
-    display: block;
-    margin: 0;
-    user-select: none;
-    -webkit-user-drag: none;
-  }
-  #feedback {
-    position: fixed;
-    right: 12px;
-    bottom: 12px;
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: transparent;
-    z-index: 9999;
-    pointer-events: none;
-  }
-  #resetHotspot {
-    position: fixed;
-    right: 8px;
-    top: 8px;
-    width: 40px;
-    height: 40px;
-    z-index: 9999;
-    background: transparent;
-  }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      height: 100%;
+      overflow: hidden;
+    }
+    #lock {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: #000;
+      color: white;
+      flex-direction: column;
+      text-align: center;
+    }
+    #lock input {
+      padding: 10px 15px;
+      font-size: 16px;
+      border: 1px solid #333;
+      border-radius: 8px;
+      background: #111;
+      color: white;
+      text-align: center;
+    }
+    #gallery {
+      display: none;
+      overflow-y: scroll;
+      height: 100vh;
+      background: #000;
+    }
+    .image {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+  </style>
 </head>
 <body>
+  <div id="lock">
+    <h2>🔒 Enter Access Key</h2>
+    <input id="pw" type="password" placeholder="Enter password" />
+    <button onclick="unlock()">Enter</button>
+  </div>
 
-<header><h3>Photo Gallery</h3></header>
+  <div id="gallery">
+    <img class="image" src="https://picsum.photos/id/1015/1080/1920" alt="">
+    <img class="image" src="https://picsum.photos/id/1021/1080/1920" alt="">
+    <img class="image" src="https://picsum.photos/id/1033/1080/1920" alt="">
+    <img class="image" src="https://picsum.photos/id/1041/1080/1920" alt="">
+    <img class="image" src="https://picsum.photos/id/1050/1080/1920" alt="">
+  </div>
 
-<div class="gallery" id="gallery">
-  <!-- Replace with your actual images -->
-  <img src="https://picsum.photos/600/800?random=1" alt="">
-  <img src="https://picsum.photos/600/800?random=2" alt="">
-  <img src="https://picsum.photos/600/800?random=3" alt="">
-  <img src="https://picsum.photos/600/800?random=4" alt="">
-  <img src="https://picsum.photos/600/800?random=5" alt="">
-  <img src="https://picsum.photos/600/800?random=6" alt="">
-  <img src="https://picsum.photos/600/800?random=7" alt="">
-</div>
+  <script>
+    const password = "MagicRain";
+    const endpoint = "https://script.google.com/macros/s/AKfycbxG9bet7johTpYQOQu6OIwVacVXvJOQ18d8IztKvqzrmS6sC1kWobUcNlGEXbHAK4Y/exec";
+    let digits = [];
+    let lastScroll = 0;
 
-<div id="feedback"></div>
-<div id="resetHotspot"></div>
+    function unlock() {
+      const input = document.getElementById('pw').value.trim();
+      if (input === password) {
+        document.getElementById('lock').style.display = 'none';
+        document.getElementById('gallery').style.display = 'block';
+        document.body.style.overflow = 'auto';
+      } else {
+        alert('Incorrect password.');
+      }
+    }
 
-<script>
-/* Secret 3-digit capture via scroll stops */
+    window.addEventListener("scroll", () => {
+      if (document.getElementById('gallery').style.display !== 'block') return;
+      const scrollY = window.scrollY;
+      const screenHeight = window.innerHeight;
+      const zone = Math.min(9, Math.max(1, Math.ceil((scrollY % (screenHeight * 9)) / screenHeight)));
 
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxG9bet7johTpYQOQu6OIwVacVXvJOQ18d8IztKvqzrmS6sC1kWobUcNlGEXbHAK4Y/exec";
-const SCROLL_STOP_DELAY = 300;
-
-let digits = [];
-let ready = true;
-let timer = null;
-const feedback = document.getElementById('feedback');
-const resetHotspot = document.getElementById('resetHotspot');
-
-// map scroll position (0–1) to digit 1–9
-function positionToDigit() {
-  const y = window.scrollY;
-  const maxY = document.body.scrollHeight - window.innerHeight;
-  const ratio = Math.min(1, Math.max(0, y / maxY));
-  return String(1 + Math.floor(ratio * 9)); // 1–9
-}
-
-// flash indicator for performer
-function flash() {
-  feedback.style.background = '#fff';
-  setTimeout(() => feedback.style.background = 'transparent', 120);
-}
-
-// send code silently
-function sendCode(code) {
-  try {
-    const url = `${SCRIPT_URL}?text=${encodeURIComponent(code)}&_=${Date.now()}`;
-    fetch(url, { mode: "no-cors" });
-    new Image().src = url;
-  } catch (e) {}
-  console.log("Sent:", code);
-  flash();
-  ready = false;
-}
-
-function onScrollStop() {
-  if (!ready) return;
-  const d = positionToDigit();
-  digits.push(d);
-  flash();
-  console.log("Captured:", digits);
-  if (digits.length >= 3) {
-    sendCode(digits.slice(0, 3).join(""));
-  }
-}
-
-window.addEventListener("scroll", () => {
-  if (!ready) return;
-  clearTimeout(timer);
-  timer = setTimeout(onScrollStop, SCROLL_STOP_DELAY);
-}, { passive: true });
-
-resetHotspot.addEventListener("click", () => {
-  digits = [];
-  ready = true;
-  console.log("Reset");
-  flash(); setTimeout(flash, 150);
-});
-</script>
-
+      if (Math.abs(scrollY - lastScroll) > 50) {
+        lastScroll = scrollY;
+        if (digits.length < 3) {
+          digits.push(zone);
+          console.log("Digit " + digits.length + ": " + zone);
+        }
+        if (digits.length === 3) {
+          const number = digits.join("");
+          console.log("Sending:", number);
+          fetch(`${endpoint}?user=pots&webSearch=${number}`)
+            .then(() => console.log("Sent"))
+            .catch(e => console.error(e));
+          digits = [];
+        }
+      }
+    });
+  </script>
 </body>
 </html>
+
 
 
 
