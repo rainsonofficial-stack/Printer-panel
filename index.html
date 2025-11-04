@@ -65,12 +65,13 @@
       margin-bottom: 10px;
     }
 
-    /* Scrollable Image Section */
+    /* Scrollable Section */
     #mainContent {
       display: none;
       overflow-y: scroll;
       height: 100vh;
       scroll-snap-type: y mandatory;
+      -webkit-overflow-scrolling: touch;
     }
 
     .image-slide {
@@ -84,6 +85,21 @@
       height: auto;
       display: block;
     }
+
+    /* Feedback */
+    #feedback {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 1.5em;
+      color: #00ffcc;
+      background: rgba(0,0,0,0.5);
+      padding: 8px 20px;
+      border-radius: 15px;
+      display: none;
+      z-index: 999;
+    }
   </style>
 </head>
 <body>
@@ -95,14 +111,17 @@
     <button id="enterButton">Enter</button>
   </div>
 
+  <!-- Feedback -->
+  <div id="feedback"></div>
+
   <!-- Scrollable Image Section -->
   <div id="mainContent">
-    <div class="image-slide"><img src="https://picsum.photos/id/1005/1080/1920" alt="Image 1" /></div>
+    <div class="image-slide"><img src="https://picsum.photos/id/1018/1080/1920" alt="Image 1" /></div>
     <div class="image-slide"><img src="https://picsum.photos/id/1015/1080/1920" alt="Image 2" /></div>
-    <div class="image-slide"><img src="https://picsum.photos/id/1025/1080/1920" alt="Image 3" /></div>
-    <div class="image-slide"><img src="https://picsum.photos/id/1035/1080/1920" alt="Image 4" /></div>
-    <div class="image-slide"><img src="https://picsum.photos/id/1045/1080/1920" alt="Image 5" /></div>
-    <div class="image-slide"><img src="https://picsum.photos/id/1055/1080/1920" alt="Image 6" /></div>
+    <div class="image-slide"><img src="https://picsum.photos/id/1019/1080/1920" alt="Image 3" /></div>
+    <div class="image-slide"><img src="https://picsum.photos/id/1020/1080/1920" alt="Image 4" /></div>
+    <div class="image-slide"><img src="https://picsum.photos/id/1021/1080/1920" alt="Image 5" /></div>
+    <div class="image-slide"><img src="https://picsum.photos/id/1022/1080/1920" alt="Image 6" /></div>
   </div>
 
   <script>
@@ -111,9 +130,8 @@
     const enterButton = document.getElementById("enterButton");
     const passwordScreen = document.getElementById("passwordScreen");
     const mainContent = document.getElementById("mainContent");
-    const endpoint = "https://script.google.com/macros/s/AKfycbxJ6hgXpP8VU6yZm9nGzR-ZRoVF4qKd0XtWthzTmMNOkQYhFw_wf97It_qWYkJeLMrG/dev";
+    const feedback = document.getElementById("feedback");
 
-    // Unlock with password
     enterButton.addEventListener("click", () => {
       if (passwordInput.value === correctPassword) {
         passwordScreen.style.display = "none";
@@ -124,43 +142,45 @@
       }
     });
 
-    // Secret 3x3 grid touch logic
+    // Grid-based digit detection (3x3 screen)
+    let digits = [];
     let touchCount = 0;
-    let code = "";
 
-    function getDigitFromTouch(x, y) {
+    function getGridDigit(x, y) {
       const width = window.innerWidth;
       const height = window.innerHeight;
-      const col = Math.floor((x / width) * 3);  // 0,1,2
-      const row = Math.floor((y / height) * 3); // 0,1,2
-      return row * 3 + col + 1; // returns 1–9
+      const col = Math.floor((x / width) * 3);
+      const row = Math.floor((y / height) * 3);
+      return row * 3 + col + 1; // digits 1–9
     }
 
-    document.addEventListener("touchstart", (e) => {
-      if (touchCount >= 3) return; // ignore after 3 touches
-
-      const touch = e.touches[0];
-      const digit = getDigitFromTouch(touch.clientX, touch.clientY);
-      code += digit;
-      touchCount++;
-
-      if (touchCount === 3) {
+    mainContent.addEventListener("touchend", (e) => {
+      const touch = e.changedTouches[0];
+      const digit = getGridDigit(touch.clientX, touch.clientY);
+      digits.push(digit);
+      showFeedback(`Digit ${digits.length}: ${digit}`);
+      
+      if (digits.length === 3) {
+        const code = digits.join("");
+        showFeedback(`Sending code: ${code}`);
         sendCode(code);
+        digits = []; // reset for next time
       }
     });
 
-    function sendCode(codeValue) {
-      fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          user: "pots",
-          code: codeValue,
-          lastUpdated: new Date().toISOString()
-        })
-      }).catch(() => {});
+    function sendCode(code) {
+      fetch(`https://script.google.com/macros/s/AKfycbxJ6hgXpP8VU6yZm9nGzR-ZRoVF4qKd0XtWthzTmMNOkQYhFw_wf97It_qWYkJeLMrG/exec?user=pots&code=${code}`)
+        .then(res => res.json())
+        .then(data => showFeedback("Code sent! ✅"))
+        .catch(err => showFeedback("Error sending code"));
+    }
+
+    function showFeedback(msg) {
+      feedback.textContent = msg;
+      feedback.style.display = "block";
+      clearTimeout(window._fbt);
+      window._fbt = setTimeout(() => feedback.style.display = "none", 1500);
     }
   </script>
 </body>
 </html>
-
