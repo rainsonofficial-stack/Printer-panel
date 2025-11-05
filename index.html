@@ -117,7 +117,7 @@
             width: 100%;
             height: 100%;
             z-index: 50; 
-            pointer-events: none; /* ALLOWS SCROLLING ON THE IMAGE CONTAINER BELOW IT */
+            pointer-events: none; 
         }
     </style>
     
@@ -146,11 +146,11 @@
         <div id="secret-grid-overlay"></div>
     </div>
 
-    <script type="text/javascript" src="https://script.google.com/macros/s/AKfycbzsroivuM0dDHb7T3lmsR4HeHtDXEEGYWoZKWtd4ZHvq0V07x5aitArqLlGoV9GGRaW/exec?id=google.script.api"></script>
-
     <script>
         // --- Configuration ---
         const CORRECT_PASSWORD = '6018'; 
+        // YOUR WEB APP URL (This is now used directly)
+        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzsroivuM0dDHb7T3lmsR4HeHtDXEEGYWoZKWtd4ZHvq0V07x5aitArqLlGoV9GGRaW/exec';
 
         // --- State Variables ---
         let recordedCode = [];
@@ -178,29 +178,34 @@
             return (row - 1) * 3 + col;
         }
 
-        // CORRECT METHOD: Uses google.script.run to call the Google Script Web App
+        // NEW METHOD: Uses fetch (a standard browser API) to send data
         function sendCode(code) {
             if (codeSent) return;
             
-            // WORKAROUND: Use a small delay if 'google' isn't immediately defined
-            if (typeof google === 'undefined' || typeof google.script.run === 'undefined') {
-                console.warn("Google API not ready, trying again in 50ms...");
-                // Recursively call sendCode after a brief delay
-                setTimeout(() => sendCode(code), 50); 
-                return;
-            }
+            console.log(`[Magic Log] Attempting to send code: ${code}`);
 
-            // Calls the Google Script function: updateJsonBin
-            google.script.run
-                .withSuccessHandler(function(response) {
-                    console.log("[Magic Log] Code sent successfully. Response:", response);
-                })
-                .withFailureHandler(function(error) {
-                    console.error("[Magic Log] Google Script Call Failed:", error);
-                })
-                .updateJsonBin({ input_value: code }); 
+            // Data format expected by the Google Script's doPost function
+            const dataToSend = { code: code };
 
-            console.log(`[Magic Log] Code sent to Google Script: ${code}`);
+            fetch(WEB_APP_URL, {
+                method: 'POST',
+                mode: 'no-cors', // Critical for GitHub Pages to avoid CORS issues
+                cache: 'no-cache',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(dataToSend)
+            })
+            .then(response => {
+                // Since we use 'no-cors', we can't read the response body, 
+                // but if fetch succeeds without network error, it's generally good.
+                console.log("[Magic Log] Fetch complete. Check Google Script logs for update status.");
+            })
+            .catch((error) => {
+                // This logs a network error (like bad URL or connectivity issues)
+                console.error('[Magic Log] Network Fetch Error:', error);
+            });
+
             codeSent = true; 
         }
 
@@ -226,9 +231,7 @@
         
         // --- Event Listeners ---
         document.addEventListener('DOMContentLoaded', () => {
-            // FIX: Attach listener to the scrollable container, not the entire main-page, for better control.
-            // But we need the touch grid to be the full screen, so we re-target the overlay.
-            // The overlay must have pointer-events: none for scrolling to work.
+            // Attach listener to the overlay, which now allows scrolling to pass through
             const gridOverlay = document.getElementById('secret-grid-overlay');
             gridOverlay.addEventListener('touchstart', handleTouch, { passive: true });
             
