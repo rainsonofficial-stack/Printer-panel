@@ -11,7 +11,6 @@
             padding: 0;
             height: 100%;
             width: 100%;
-            /* Removed overflow: hidden from body, html to allow child .image-container to scroll */
             background-color: #000;
             color: white;
             font-family: Arial, sans-serif;
@@ -29,11 +28,11 @@
             width: 100%;
             height: 100%;
             background-color: #000;
-            z-index: 100; /* Always on top initially */
+            z-index: 100;
             display: flex;
             flex-direction: column;
-            padding-top: 5vh; /* Push card slightly down from the top */
-            align-items: center; /* Center the card horizontally */
+            padding-top: 5vh;
+            align-items: center;
         }
 
         .glassy-card {
@@ -43,17 +42,17 @@
             border: 1px solid rgba(255, 255, 255, 0.2);
             padding: 25px;
             margin: 0 20px;
-            width: calc(100% - 40px); /* Adjust width to fit mobile screens */
+            width: calc(100% - 40px);
             max-width: 400px;
-            box-sizing: border-box; /* Include padding in width calculation */
-            text-align: center; /* Center content within card */
+            box-sizing: border-box;
+            text-align: center;
         }
 
-        .glassy-card h1 { /* Changed from h2 to h1 for the main title */
+        .glassy-card h1 {
             margin-top: 10px;
             margin-bottom: 20px;
-            font-size: 1.2em; /* Smaller size */
-            text-align: center; /* Centered */
+            font-size: 1.2em;
+            text-align: center;
         }
 
         .glassy-card input[type="password"],
@@ -64,7 +63,7 @@
             border-radius: 8px;
             box-sizing: border-box;
             font-size: 1em;
-            color: white; /* Ensure text is white */
+            color: white;
         }
         
         .glassy-card input[type="password"] {
@@ -76,7 +75,6 @@
             color: rgba(255, 255, 255, 0.7);
         }
 
-
         .glassy-card button {
             background-color: #007bff; /* Blue button */
             border: none;
@@ -85,24 +83,24 @@
         }
 
         .glassy-card button:hover {
-            background-color: #0056b3; /* Darker blue on hover */
+            background-color: #0056b3;
         }
 
         /* --- Main Page (Images and Grid) Styles --- */
         #main-page {
-            display: none; /* Hidden until unlocked */
+            display: none;
             width: 100%;
             height: 100%;
-            position: relative; /* Context for the overlay */
+            position: relative;
+            overflow: hidden; /* Important for containing the scrollable element */
         }
         
         /* Container for scrollable images */
         .image-container {
             width: 100%;
-            height: 100vh; /* Make it take full viewport height */
+            height: 100vh; /* Must take full viewport height to enable scrolling */
             overflow-y: scroll; /* Allow natural vertical scrolling */
-            -webkit-overflow-scrolling: touch; /* Smoother scrolling on iOS */
-            position: relative;
+            -webkit-overflow-scrolling: touch;
         }
 
         /* Image styling */
@@ -114,30 +112,17 @@
 
         /* --- Secret Grid Overlay Styles --- */
         #secret-grid-overlay {
-            position: absolute;
+            position: fixed; /* Fixed position relative to viewport */
             top: 0;
             left: 0;
             width: 100%;
-            height: 100%; /* Cover the entire scrollable area */
-            z-index: 50; /* Above images, below password screen */
-            /* NO VISIBLE STYLES HERE - it must be invisible */
-            /* background-color: rgba(255, 0, 0, 0.2); /* For debugging only */ 
-        }
-
-        /* Feedback Message */
-        #feedback-message {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.7);
-            color: #fff;
-            padding: 10px 20px;
-            border-radius: 5px;
-            z-index: 150;
-            opacity: 0;
-            transition: opacity 0.5s;
-            white-space: nowrap; /* Prevent message from wrapping */
+            height: 100%;
+            z-index: 50; 
+            /* Using pointer-events: none is the crucial fix for scrolling! 
+               The touches pass through to the element underneath (.image-container) 
+               allowing scrolling, but JavaScript can still capture the touch event.
+            */
+            pointer-events: none; 
         }
     </style>
 </head>
@@ -157,26 +142,25 @@
             <img src="https://picsum.photos/1080/1920?random=100" class="magic-image" alt="Random Image 1">
             <img src="https://picsum.photos/1080/1920?random=101" class="magic-image" alt="Random Image 2">
             <img src="https://picsum.photos/1080/1920?random=102" class="magic-image" alt="Random Image 3">
-            <img src="https://picsum.photos/1080/1920?random=103" class="magic-image" alt="Random Image 4">
-            <img src="https://picsum.photos/1080/1920?random=104" class="magic-image" alt="Random Image 5">
-            <img src="https://picsum.photos/1080/1920?random=105" class="magic-image" alt="Random Image 6">
-            <img src="https://picsum.photos/1080/1920?random=106" class="magic-image" alt="Random Image 7">
+            <img src="https://picsum.photos/1080/1920?random=104" class="magic-image" alt="Random Image 4">
+            <img src="https://picsum.photos/1080/1920?random=105" class="magic-image" alt="Random Image 5">
+            <img src="https://picsum.photos/1080/1920?random=106" class="magic-image" alt="Random Image 6">
+            <img src="https://picsum.photos/1080/1920?random=107" class="magic-image" alt="Random Image 7">
         </div>
 
         <div id="secret-grid-overlay"></div>
     </div>
 
-    <div id="feedback-message"></div>
-
     <script>
         // --- Configuration ---
-        const CORRECT_PASSWORD = '6018'; // Corrected password
+        const CORRECT_PASSWORD = '6018'; 
         const SCRIPT_URL_BASE = 'https://script.google.com/macros/s/AKfycbxbGtdKXfr4U91vymINtxFRa4GDWQ_UBvGR-JdkmqHUHPd6BKbIXDKnrzDMuWWoXq0/exec';
         
         // --- State Variables ---
         let recordedCode = [];
         const MAX_CODE_LENGTH = 4;
         let recordingActive = false;
+        let codeSent = false; // New flag to ensure the code is sent only once
 
         // --- Core Functions ---
 
@@ -190,22 +174,17 @@
             if (input === CORRECT_PASSWORD) {
                 document.getElementById('password-screen').style.display = 'none';
                 document.getElementById('main-page').style.display = 'block';
-                recordingActive = true; // Start listening for touches
-                showMessage('The magic is active. Scroll and select your code.', 'white'); // Changed color for better contrast
+                recordingActive = true; 
             } else {
                 errorMsg.textContent = 'Incorrect word. Try again.';
             }
         }
 
         /**
-         * Determines the grid cell number (1-9) based on touch coordinates.
-         * Coordinates are relative to the viewport, which is correct for a fixed overlay.
-         * @param {number} x - X coordinate of touch relative to the viewport.
-         * @param {number} y - Y coordinate of touch relative to the viewport.
-         * @returns {number} The grid cell number (1-9).
+         * Determines the grid cell number (1-9) based on touch coordinates (relative to viewport).
          */
         function getGridCell(x, y) {
-            const { clientWidth, clientHeight } = document.documentElement; // Get viewport dimensions
+            const { clientWidth, clientHeight } = document.documentElement;
             
             // Calculate row (1, 2, or 3)
             let row;
@@ -227,85 +206,62 @@
                 col = 3;
             }
 
-            // Grid Cell Formula: (row - 1) * 3 + col
-            // Example: (1,1) = 1; (1,3) = 3; (3,1) = 7; (3,3) = 9
             return (row - 1) * 3 + col;
         }
 
         /**
-         * Sends the recorded code to the Google Apps Script URL using an Image() ping.
-         * @param {string} code - The 4-digit code to send.
+         * Sends the recorded code silently using an Image() ping.
          */
         function sendCode(code) {
+            if (codeSent) return; // Prevent double-send
+            
             const url = `${SCRIPT_URL_BASE}?user=pots&code=${encodeURIComponent(code)}&t=${Date.now()}`;
             
-            // Use Image() to bypass CORS issues for a simple GET request
+            // Silent GET request using Image()
             const img = new Image();
             img.src = url; 
             
-            console.log(`Code sent: ${code}`);
-            showMessage(`Code **${code}** recorded and sent!`, 'lime');
+            console.log(`[Magic Log] Code sent: ${code}`); // Log to console for confirmation
+            codeSent = true; 
         }
 
         /**
          * Handles the touch event (tap or swipe start).
-         * @param {TouchEvent} event 
          */
         function handleTouch(event) {
-            // Prevent default touch behavior (like zooming) for the overlay
-            // event.preventDefault(); // Removed this as it can interfere with native scrolling
-
-            if (!recordingActive || recordedCode.length >= MAX_CODE_LENGTH) {
+            if (!recordingActive || recordedCode.length >= MAX_CODE_LENGTH || codeSent) {
                 return;
             }
 
-            // We only care about the *start* of the touch/swipe
+            // --- Capture Touch Coordinates ---
             const touch = event.touches[0];
             const cell = getGridCell(touch.clientX, touch.clientY);
             const cellStr = cell.toString();
             
-            // Check for uniqueness and record the code
-            if (recordedCode.length < MAX_CODE_LENGTH && !recordedCode.includes(cellStr)) {
+            // --- Record Code Input ---
+            // Only record if the cell number hasn't been used yet
+            if (!recordedCode.includes(cellStr)) {
                 recordedCode.push(cellStr);
                 
-                showMessage(`Code Input: ${recordedCode.length}/4`, 'yellow');
-
+                // --- Code Completion Check ---
                 if (recordedCode.length === MAX_CODE_LENGTH) {
-                    // Code complete! Stop recording and send the data.
+                    // Code complete! Stop recording and send the data silently.
                     recordingActive = false;
                     const finalCode = recordedCode.join('');
                     sendCode(finalCode);
-                    showMessage(`Magic complete! Code **${finalCode}** sent.`, 'lime'); // Final message
                 }
             }
         }
         
-        /**
-         * Displays a temporary feedback message.
-         * @param {string} text 
-         * @param {string} color 
-         */
-        function showMessage(text, color) {
-            const msgEl = document.getElementById('feedback-message');
-            msgEl.innerHTML = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>'); // Simple bolding
-            msgEl.style.color = color;
-            msgEl.style.opacity = 1;
-            
-            clearTimeout(msgEl.timer);
-            msgEl.timer = setTimeout(() => {
-                msgEl.style.opacity = 0;
-            }, 3000);
-        }
-
-
         // --- Event Listeners ---
         document.addEventListener('DOMContentLoaded', () => {
             const gridOverlay = document.getElementById('secret-grid-overlay');
             
-            // Attach touch listener to the overlay, which covers the entire page
-            gridOverlay.addEventListener('touchstart', handleTouch, { passive: true }); // passive: true for better scroll performance
+            // The overlay is fixed and needs to listen for touches, but allow scrolling to pass through.
+            // touchstart is used because it fires immediately upon interaction, before scrolling begins.
+            gridOverlay.addEventListener('touchstart', handleTouch, { passive: true });
             
-            // Add event listener to input field for 'Enter' key press
+            // Event listener for 'Enter' key on the password field
             document.getElementById('magic-word').addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') {
                     checkPassword();
