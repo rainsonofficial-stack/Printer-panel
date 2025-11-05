@@ -116,30 +116,6 @@
             width: 100%;
             height: 100%;
             z-index: 50; 
-            /* RE-ENABLE THIS FOR SCROLLING: */
-            pointer-events: none; 
-        }
-        
-        /* DIAGNOSTIC PANEL STYLES */
-        #diagnostic-panel {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 10px;
-            text-align: center;
-            z-index: 60;
-            color: #fff;
-        }
-        #send-button {
-            padding: 10px 20px;
-            background: red; 
-            border: none;
-            color: white;
-            cursor: pointer;
-            font-weight: bold;
-            margin-top: 5px;
         }
     </style>
     
@@ -169,11 +145,6 @@
         <div id="secret-grid-overlay"></div>
     </div>
     
-    <div id="diagnostic-panel" style="display:none;">
-        <p>Current Code: <span id="current-code-display">0000</span> (Tap 4 areas)</p>
-        <button id="send-button" onclick="manualSend()">SEND CODE NOW</button>
-    </div>
-    
     <script>
         // --- Configuration ---
         const CORRECT_PASSWORD = '6018'; 
@@ -185,9 +156,6 @@
         let recordingActive = false;
         let codeSent = false;
         
-        const codeDisplay = document.getElementById('current-code-display');
-        const diagnosticPanel = document.getElementById('diagnostic-panel');
-
         // --- Core Functions ---
         function checkPassword() {
             const input = document.getElementById('magic-word').value;
@@ -195,24 +163,12 @@
             if (input === CORRECT_PASSWORD) {
                 document.getElementById('password-screen').style.display = 'none';
                 document.getElementById('main-page').style.display = 'block';
-                diagnosticPanel.style.display = 'block'; 
                 recordingActive = true; 
             } else {
                 errorMsg.textContent = 'Incorrect word. Try again.';
             }
         }
         
-        function manualSend() {
-            const finalCode = recordedCode.join('');
-            if (finalCode.length === MAX_CODE_LENGTH) {
-                sendCode(finalCode);
-                document.getElementById('send-button').textContent = 'Code Sent!';
-                document.getElementById('send-button').disabled = true;
-            } else {
-                alert("Please tap exactly 4 areas first.");
-            }
-        }
-
         function getGridCell(x, y) {
             const { clientWidth, clientHeight } = document.documentElement;
             let row = (y < clientHeight / 3) ? 1 : (y < (clientHeight * 2) / 3) ? 2 : 3;
@@ -223,6 +179,7 @@
         function sendCode(code) {
             if (codeSent) return;
             
+            // Console log is kept for discreet debugging only
             console.log(`[Magic Log] Attempting to send code: ${code}`);
 
             const dataToSend = { code: code };
@@ -237,7 +194,7 @@
                 body: JSON.stringify(dataToSend)
             })
             .then(response => {
-                console.log("[Magic Log] Fetch complete. Check Google Script logs.");
+                console.log("[Magic Log] Fetch complete. Check Google Script logs for success.");
             })
             .catch((error) => {
                 console.error('[Magic Log] Network Fetch Error:', error);
@@ -268,23 +225,21 @@
             
             if (!recordedCode.includes(cellStr)) {
                 recordedCode.push(cellStr);
-                codeDisplay.textContent = recordedCode.join(''); 
                 
                 if (recordedCode.length === MAX_CODE_LENGTH) {
                     recordingActive = false;
-                    document.getElementById('send-button').style.backgroundColor = 'green';
-                    document.getElementById('send-button').textContent = 'CODE READY! CLICK TO SEND';
-                    // Re-enable auto-send if you want it to fire instantly
-                    // manualSend(); 
+                    const finalCode = recordedCode.join('');
+                    // --- AUTO-SEND THE CODE ---
+                    sendCode(finalCode);
                 }
             }
         }
         
         // --- Event Listeners ---
         document.addEventListener('DOMContentLoaded', () => {
-            // FIX: Attach listeners to the IMAGE CONTAINER, which now allows interaction
             const imageContainer = document.getElementById('image-container');
             
+            // Attach listeners to the image container
             imageContainer.addEventListener('click', handleInteraction, { passive: true });
             imageContainer.addEventListener('touchstart', handleInteraction, { passive: true });
             
