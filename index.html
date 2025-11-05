@@ -116,10 +116,10 @@
             width: 100%;
             height: 100%;
             z-index: 50; 
-            pointer-events: none; 
+            pointer-events: none; /* Allows scrolling */
         }
         
-        /* DIAGNOSTIC PANEL STYLES */
+        /* DIAGNOSTIC PANEL STYLES (Keep this for debugging visibility) */
         #diagnostic-panel {
             position: fixed;
             bottom: 0;
@@ -133,7 +133,7 @@
         }
         #send-button {
             padding: 10px 20px;
-            background: red; /* Make it obvious! */
+            background: red; 
             border: none;
             color: white;
             cursor: pointer;
@@ -194,14 +194,13 @@
             if (input === CORRECT_PASSWORD) {
                 document.getElementById('password-screen').style.display = 'none';
                 document.getElementById('main-page').style.display = 'block';
-                diagnosticPanel.style.display = 'block'; // Show the panel
+                diagnosticPanel.style.display = 'block'; 
                 recordingActive = true; 
             } else {
                 errorMsg.textContent = 'Incorrect word. Try again.';
             }
         }
         
-        // TEMPORARY MANUAL SEND FUNCTION
         function manualSend() {
             const finalCode = recordedCode.join('');
             if (finalCode.length === MAX_CODE_LENGTH) {
@@ -215,12 +214,12 @@
 
         function getGridCell(x, y) {
             const { clientWidth, clientHeight } = document.documentElement;
+            // Use touch/click coordinates relative to the viewport
             let row = (y < clientHeight / 3) ? 1 : (y < (clientHeight * 2) / 3) ? 2 : 3;
             let col = (x < clientWidth / 3) ? 1 : (x < (clientWidth * 2) / 3) ? 2 : 3;
             return (row - 1) * 3 + col;
         }
 
-        // Uses fetch (standard browser API) to send data
         function sendCode(code) {
             if (codeSent) return;
             
@@ -247,13 +246,18 @@
             codeSent = true; 
         }
 
-        function handleTouch(event) {
+        // --- REVISED EVENT HANDLER FOR CLICK/TAP ---
+        function handleInteraction(event) {
+            // Use clientX/Y for both touch and mouse clicks
+            const interaction = event.touches ? event.touches[0] : event;
+            const x = interaction.clientX;
+            const y = interaction.clientY;
+
             if (!recordingActive || recordedCode.length >= MAX_CODE_LENGTH || codeSent) {
                 return;
             }
 
-            const touch = event.touches[0];
-            const cell = getGridCell(touch.clientX, touch.clientY);
+            const cell = getGridCell(x, y);
             const cellStr = cell.toString();
             
             if (!recordedCode.includes(cellStr)) {
@@ -262,7 +266,6 @@
                 
                 if (recordedCode.length === MAX_CODE_LENGTH) {
                     recordingActive = false;
-                    // Auto-send is removed for manual button test, but the code is ready
                     console.log(`[Magic Log] Code collected: ${recordedCode.join('')}`);
                     document.getElementById('send-button').style.backgroundColor = 'green';
                     document.getElementById('send-button').textContent = 'CODE READY! CLICK TO SEND';
@@ -273,7 +276,10 @@
         // --- Event Listeners ---
         document.addEventListener('DOMContentLoaded', () => {
             const gridOverlay = document.getElementById('secret-grid-overlay');
-            gridOverlay.addEventListener('touchstart', handleTouch, { passive: true });
+            
+            // --- ATTACH BOTH CLICK AND TOUCHSTART LISTENERS FOR MAX COMPATIBILITY ---
+            gridOverlay.addEventListener('click', handleInteraction, { passive: true });
+            gridOverlay.addEventListener('touchstart', handleInteraction, { passive: true });
             
             document.getElementById('magic-word').addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') checkPassword();
