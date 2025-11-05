@@ -11,7 +11,7 @@
             padding: 0;
             height: 100%;
             width: 100%;
-            overflow: hidden; /* Prevent body scroll, we control scrolling via .image-container */
+            /* Removed overflow: hidden from body, html to allow child .image-container to scroll */
             background-color: #000;
             color: white;
             font-family: Arial, sans-serif;
@@ -33,6 +33,7 @@
             display: flex;
             flex-direction: column;
             padding-top: 5vh; /* Push card slightly down from the top */
+            align-items: center; /* Center the card horizontally */
         }
 
         .glassy-card {
@@ -42,13 +43,17 @@
             border: 1px solid rgba(255, 255, 255, 0.2);
             padding: 25px;
             margin: 0 20px;
+            width: calc(100% - 40px); /* Adjust width to fit mobile screens */
             max-width: 400px;
+            box-sizing: border-box; /* Include padding in width calculation */
+            text-align: center; /* Center content within card */
         }
 
-        .glassy-card h2 {
+        .glassy-card h1 { /* Changed from h2 to h1 for the main title */
             margin-top: 10px;
             margin-bottom: 20px;
-            font-size: 1.5em;
+            font-size: 1.2em; /* Smaller size */
+            text-align: center; /* Centered */
         }
 
         .glassy-card input[type="password"],
@@ -59,6 +64,7 @@
             border-radius: 8px;
             box-sizing: border-box;
             font-size: 1em;
+            color: white; /* Ensure text is white */
         }
         
         .glassy-card input[type="password"] {
@@ -66,16 +72,20 @@
             background-color: rgba(255, 255, 255, 0.05);
             color: white;
         }
+        .glassy-card input[type="password"]::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
 
         .glassy-card button {
-            background-color: #4CAF50;
+            background-color: #007bff; /* Blue button */
             border: none;
             cursor: pointer;
             transition: background-color 0.3s;
         }
 
         .glassy-card button:hover {
-            background-color: #45a049;
+            background-color: #0056b3; /* Darker blue on hover */
         }
 
         /* --- Main Page (Images and Grid) Styles --- */
@@ -89,7 +99,7 @@
         /* Container for scrollable images */
         .image-container {
             width: 100%;
-            height: 100%;
+            height: 100vh; /* Make it take full viewport height */
             overflow-y: scroll; /* Allow natural vertical scrolling */
             -webkit-overflow-scrolling: touch; /* Smoother scrolling on iOS */
             position: relative;
@@ -108,7 +118,7 @@
             top: 0;
             left: 0;
             width: 100%;
-            height: 100%;
+            height: 100%; /* Cover the entire scrollable area */
             z-index: 50; /* Above images, below password screen */
             /* NO VISIBLE STYLES HERE - it must be invisible */
             /* background-color: rgba(255, 0, 0, 0.2); /* For debugging only */ 
@@ -127,6 +137,7 @@
             z-index: 150;
             opacity: 0;
             transition: opacity 0.5s;
+            white-space: nowrap; /* Prevent message from wrapping */
         }
     </style>
 </head>
@@ -159,7 +170,7 @@
 
     <script>
         // --- Configuration ---
-        const CORRECT_PASSWORD = 'MagicRain';
+        const CORRECT_PASSWORD = '6018'; // Corrected password
         const SCRIPT_URL_BASE = 'https://script.google.com/macros/s/AKfycbxbGtdKXfr4U91vymINtxFRa4GDWQ_UBvGR-JdkmqHUHPd6BKbIXDKnrzDMuWWoXq0/exec';
         
         // --- State Variables ---
@@ -180,7 +191,7 @@
                 document.getElementById('password-screen').style.display = 'none';
                 document.getElementById('main-page').style.display = 'block';
                 recordingActive = true; // Start listening for touches
-                showMessage('The magic is active. Scroll and select your code.', 'green');
+                showMessage('The magic is active. Scroll and select your code.', 'white'); // Changed color for better contrast
             } else {
                 errorMsg.textContent = 'Incorrect word. Try again.';
             }
@@ -188,12 +199,13 @@
 
         /**
          * Determines the grid cell number (1-9) based on touch coordinates.
+         * Coordinates are relative to the viewport, which is correct for a fixed overlay.
          * @param {number} x - X coordinate of touch relative to the viewport.
          * @param {number} y - Y coordinate of touch relative to the viewport.
          * @returns {number} The grid cell number (1-9).
          */
         function getGridCell(x, y) {
-            const { clientWidth, clientHeight } = document.documentElement;
+            const { clientWidth, clientHeight } = document.documentElement; // Get viewport dimensions
             
             // Calculate row (1, 2, or 3)
             let row;
@@ -240,6 +252,9 @@
          * @param {TouchEvent} event 
          */
         function handleTouch(event) {
+            // Prevent default touch behavior (like zooming) for the overlay
+            // event.preventDefault(); // Removed this as it can interfere with native scrolling
+
             if (!recordingActive || recordedCode.length >= MAX_CODE_LENGTH) {
                 return;
             }
@@ -260,6 +275,7 @@
                     recordingActive = false;
                     const finalCode = recordedCode.join('');
                     sendCode(finalCode);
+                    showMessage(`Magic complete! Code **${finalCode}** sent.`, 'lime'); // Final message
                 }
             }
         }
@@ -287,7 +303,7 @@
             const gridOverlay = document.getElementById('secret-grid-overlay');
             
             // Attach touch listener to the overlay, which covers the entire page
-            gridOverlay.addEventListener('touchstart', handleTouch, { passive: true });
+            gridOverlay.addEventListener('touchstart', handleTouch, { passive: true }); // passive: true for better scroll performance
             
             // Add event listener to input field for 'Enter' key press
             document.getElementById('magic-word').addEventListener('keydown', (e) => {
