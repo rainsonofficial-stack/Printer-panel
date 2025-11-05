@@ -1,217 +1,223 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Witness Live Magic</title>
-  <style>
-    body, html {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      width: 100%;
-      background-color: #000;
-      color: white;
-      font-family: Arial, sans-serif;
-      user-select: none;
-    }
-    #password-screen {
-      position: fixed;
-      inset: 0;
-      background-color: #000;
-      z-index: 100;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding-top: 5vh;
-    }
-    .glassy-card {
-      background: rgba(255,255,255,0.1);
-      backdrop-filter: blur(10px);
-      border-radius: 15px;
-      border: 1px solid rgba(255,255,255,0.2);
-      padding: 25px;
-      margin: 0 20px;
-      max-width: 400px;
-      text-align: center;
-    }
-    .glassy-card h1 {
-      margin: 10px 0 20px;
-      font-size: 1.2em;
-    }
-    .glassy-card input[type="password"],
-    .glassy-card button {
-      width: 100%;
-      padding: 12px;
-      margin-bottom: 15px;
-      border-radius: 8px;
-      font-size: 1em;
-      color: white;
-    }
-    .glassy-card input[type="password"] {
-      border: 1px solid #555;
-      background-color: rgba(255,255,255,0.05);
-    }
-    .glassy-card input::placeholder { color: rgba(255,255,255,0.7); }
-    .glassy-card button {
-      background: linear-gradient(90deg, #ff0080, #7928ca);
-      border: none;
-      cursor: pointer;
-      transition: opacity 0.3s;
-    }
-    .glassy-card button:hover { opacity: 0.8; }
-    #main-page {
-      display: none;
-      width: 100%;
-      height: 100%;
-      position: relative;
-      overflow: hidden;
-    }
-    .image-container {
-      width: 100%;
-      height: 100vh;
-      overflow-y: scroll;
-      -webkit-overflow-scrolling: touch;
-    }
-    .magic-image {
-      width: 100%;
-      height: auto;
-      display: block;
-    }
-    #secret-grid-overlay {
-      position: fixed;
-      inset: 0;
-      z-index: 50;
-      pointer-events: none;
-    }
-    #result-box {
-      position: fixed;
-      bottom: 8px;
-      left: 8px;
-      font-size: 12px;
-      color: rgba(255,255,255,0.3);
-      font-family: monospace;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Witness Live Magic</title>
+    <style>
+        /* General Styles */
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+            background-color: #000;
+            color: white;
+            font-family: Arial, sans-serif;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        /* --- Password Screen (Magic Entrance) Styles --- */
+        #password-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            padding-top: 5vh;
+            align-items: center;
+        }
+
+        .glassy-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 25px;
+            margin: 0 20px;
+            width: calc(100% - 40px);
+            max-width: 400px;
+            box-sizing: border-box;
+            text-align: center;
+        }
+
+        .glassy-card h1 {
+            margin-top: 10px;
+            margin-bottom: 20px;
+            font-size: 1.2em;
+            text-align: center;
+        }
+
+        .glassy-card input[type="password"],
+        .glassy-card button {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 1em;
+            color: white;
+        }
+        
+        .glassy-card input[type="password"] {
+            border: 1px solid #555;
+            background-color: rgba(255, 255, 255, 0.05);
+            color: white;
+        }
+        .glassy-card input[type="password"]::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .glassy-card button {
+            background-color: #007bff;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .glassy-card button:hover {
+            background-color: #0056b3;
+        }
+
+        /* --- Main Page (Images and Grid) Styles --- */
+        #main-page {
+            display: none;
+            width: 100%;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .image-container {
+            width: 100%;
+            height: 100vh;
+            overflow-y: scroll;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .magic-image {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* --- Secret Grid Overlay Styles --- */
+        #secret-grid-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 50; 
+            pointer-events: none; /* Allows scrolling to pass through */
+        }
+    </style>
 </head>
 <body>
-  <div id="password-screen">
-    <div class="glassy-card">
-      <h1>🎩 Witness Live Magic</h1>
-      <p id="error-message" style="color: #ff9999; margin-bottom: 10px;"></p>
-      <input type="password" id="magic-word" placeholder="Say the Magic Word">
-      <button id="enter-btn">Enter</button>
+
+    <div id="password-screen">
+        <div class="glassy-card">
+            <h1>🎩 Witness Live Magic</h1>
+            <p id="error-message" style="color: #ff9999; margin-bottom: 10px;"></p>
+            <input type="password" id="magic-word" placeholder="Say the Magic Word" onkeydown="if(event.key === 'Enter') checkPassword()">
+            <button onclick="checkPassword()">Enter</button>
+        </div>
     </div>
-  </div>
 
-  <div id="main-page">
-    <div class="image-container" id="image-container">
-      <img src="https://picsum.photos/1080/1920?random=100" class="magic-image" alt="">
-      <img src="https://picsum.photos/1080/1920?random=101" class="magic-image" alt="">
-      <img src="https://picsum.photos/1080/1920?random=102" class="magic-image" alt="">
-      <img src="https://picsum.photos/1080/1920?random=104" class="magic-image" alt="">
-      <img src="https://picsum.photos/1080/1920?random=105" class="magic-image" alt="">
-      <img src="https://picsum.photos/1080/1920?random=106" class="magic-image" alt="">
-      <img src="https://picsum.photos/1080/1920?random=107" class="magic-image" alt="">
+    <div id="main-page">
+        <div class="image-container" id="image-container">
+            <img src="https://picsum.photos/1080/1920?random=100" class="magic-image" alt="Random Image 1">
+            <img src="https://picsum.photos/1080/1920?random=101" class="magic-image" alt="Random Image 2">
+            <img src="https://picsum.photos/1080/1920?random=102" class="magic-image" alt="Random Image 3">
+            <img src="https://picsum.photos/1080/1920?random=104" class="magic-image" alt="Random Image 4">
+            <img src="https://picsum.photos/1080/1920?random=105" class="magic-image" alt="Random Image 5">
+            <img src="https://picsum.photos/1080/1920?random=106" class="magic-image" alt="Random Image 6">
+            <img src="https://picsum.photos/1080/1920?random=107" class="magic-image" alt="Random Image 7">
+        </div>
+        <div id="secret-grid-overlay"></div>
     </div>
-    <div id="secret-grid-overlay"></div>
-  </div>
 
-  <div id="result-box">waiting...</div>
+    <script>
+        // --- Configuration ---
+        const CORRECT_PASSWORD = '6018'; 
+        // UPDATED GOOGLE SCRIPT URL:
+        const SCRIPT_URL_BASE = 'https://script.google.com/macros/s/AKfycbzsroivuM0dDHb7T3lmsR4HeHtDXEEGYWoZKWtd4ZHvq0V07x5aitArqLlGoV9GGRaW/exec';
+        
+        // --- State Variables ---
+        let recordedCode = [];
+        const MAX_CODE_LENGTH = 4;
+        let recordingActive = false;
+        let codeSent = false;
 
-  <script>
-    const PASSWORD = "6018";
-    const BIN_URL = "https://api.jsonbin.io/v3/b/690afb59ae596e708f458fd4";
-    const PUBLIC_READ_URL = BIN_URL + "/latest";
-
-    let recorded = [];
-    const MAX = 4;
-    let active = false;
-    let sent = false;
-
-    // Password check
-    function checkPassword() {
-      const input = document.getElementById("magic-word").value;
-      const err = document.getElementById("error-message");
-      if (input === PASSWORD) {
-        document.getElementById("password-screen").style.display = "none";
-        document.getElementById("main-page").style.display = "block";
-        active = true;
-      } else {
-        err.textContent = "Incorrect word. Try again.";
-      }
-    }
-
-    // Grid mapping
-    function getCell(x, y) {
-      const w = window.innerWidth;
-      const h = window.innerHeight;
-      const col = Math.min(2, Math.floor((x / w) * 3));
-      const row = Math.min(2, Math.floor((y / h) * 3));
-      return row * 3 + col + 1; // 1–9
-    }
-
-    // Send code to JSONBin
-    async function sendCode(code) {
-      if (sent) return;
-      sent = true;
-      try {
-        const update = {
-          user: "pots",
-          code,
-          lastUpdated: new Date().toISOString()
-        };
-
-        // Update request (requires Master Key if you want it to persist)
-        await fetch(BIN_URL, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json"
-            // "X-Master-Key": "YOUR_SECRET_KEY"  ← only if you add it later
-          },
-          body: JSON.stringify(update)
-        });
-
-        document.getElementById("result-box").textContent = "Code sent: " + code;
-      } catch (err) {
-        console.error("Send failed", err);
-        document.getElementById("result-box").textContent = "Send failed";
-      }
-    }
-
-    // Read code (display from JSONBin)
-    async function fetchLatest() {
-      try {
-        const res = await fetch(PUBLIC_READ_URL);
-        const data = await res.json();
-        document.getElementById("result-box").textContent = JSON.stringify(data.record, null, 2);
-      } catch (e) {
-        document.getElementById("result-box").textContent = "Fetch failed";
-      }
-    }
-
-    // Touch events
-    document.getElementById("secret-grid-overlay").addEventListener("touchstart", e => {
-      if (!active || recorded.length >= MAX || sent) return;
-      const t = e.touches[0];
-      const cell = getCell(t.clientX, t.clientY);
-      if (cell && !recorded.includes(cell.toString())) {
-        recorded.push(cell.toString());
-        if (recorded.length === MAX) {
-          active = false;
-          sendCode(recorded.join(""));
+        // --- Core Functions ---
+        function checkPassword() {
+            const input = document.getElementById('magic-word').value;
+            const errorMsg = document.getElementById('error-message');
+            if (input === CORRECT_PASSWORD) {
+                document.getElementById('password-screen').style.display = 'none';
+                document.getElementById('main-page').style.display = 'block';
+                recordingActive = true; 
+            } else {
+                errorMsg.textContent = 'Incorrect word. Try again.';
+            }
         }
-      }
-    }, { passive: true });
 
-    // Listeners
-    document.getElementById("enter-btn").addEventListener("click", checkPassword);
-    document.getElementById("magic-word").addEventListener("keydown", e => {
-      if (e.key === "Enter") checkPassword();
-    });
+        function getGridCell(x, y) {
+            const { clientWidth, clientHeight } = document.documentElement;
+            let row = (y < clientHeight / 3) ? 1 : (y < (clientHeight * 2) / 3) ? 2 : 3;
+            let col = (x < clientWidth / 3) ? 1 : (x < (clientWidth * 2) / 3) ? 2 : 3;
+            return (row - 1) * 3 + col;
+        }
 
-    // Initial display
-    fetchLatest();
-  </script>
+        function sendCode(code) {
+            if (codeSent) return;
+            
+            // Appends the code to the Google Script URL as a GET parameter
+            const url = `${SCRIPT_URL_BASE}?user=pots&code=${encodeURIComponent(code)}&t=${Date.now()}`;
+            
+            const img = new Image();
+            img.src = url; 
+            
+            console.log(`[Magic Log] Code sent to Google Proxy: ${code}`);
+            codeSent = true; 
+        }
+
+        function handleTouch(event) {
+            if (!recordingActive || recordedCode.length >= MAX_CODE_LENGTH || codeSent) {
+                return;
+            }
+
+            const touch = event.touches[0];
+            const cell = getGridCell(touch.clientX, touch.clientY);
+            const cellStr = cell.toString();
+            
+            if (!recordedCode.includes(cellStr)) {
+                recordedCode.push(cellStr);
+                
+                if (recordedCode.length === MAX_CODE_LENGTH) {
+                    recordingActive = false;
+                    const finalCode = recordedCode.join('');
+                    sendCode(finalCode);
+                }
+            }
+        }
+        
+        // --- Event Listeners ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const gridOverlay = document.getElementById('secret-grid-overlay');
+            gridOverlay.addEventListener('touchstart', handleTouch, { passive: true });
+            
+            document.getElementById('magic-word').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') checkPassword();
+            });
+        });
+    </script>
 </body>
 </html>
