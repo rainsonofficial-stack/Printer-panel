@@ -116,6 +116,8 @@
             width: 100%;
             height: 100%;
             z-index: 50; 
+            /* RE-ENABLE THIS FOR SCROLLING: */
+            pointer-events: none; 
         }
         
         /* DIAGNOSTIC PANEL STYLES */
@@ -272,15 +274,17 @@
                     recordingActive = false;
                     document.getElementById('send-button').style.backgroundColor = 'green';
                     document.getElementById('send-button').textContent = 'CODE READY! CLICK TO SEND';
+                    // Re-enable auto-send if you want it to fire instantly
+                    // manualSend(); 
                 }
             }
         }
         
         // --- Event Listeners ---
         document.addEventListener('DOMContentLoaded', () => {
-            const imageContainer = document.getElementById('image-container'); // The scrollable element
+            // FIX: Attach listeners to the IMAGE CONTAINER, which now allows interaction
+            const imageContainer = document.getElementById('image-container');
             
-            // We use the image container to capture taps for code
             imageContainer.addEventListener('click', handleInteraction, { passive: true });
             imageContainer.addEventListener('touchstart', handleInteraction, { passive: true });
             
