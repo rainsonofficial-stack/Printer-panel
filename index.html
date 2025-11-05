@@ -179,12 +179,20 @@
         function sendCode(code) {
             if (codeSent) return;
             
+            // CRITICAL: Check if the API is loaded before attempting the call
+            if (typeof google.script.run === 'undefined') {
+                 console.error("CRITICAL ERROR: google.script.run API is not loaded!");
+                 // Return to prevent further attempts that will fail
+                 return;
+            }
+
             // Calls the Google Script function: updateJsonBin
             google.script.run
                 .withSuccessHandler(function(response) {
                     console.log("[Magic Log] Code sent successfully. Response:", response);
                 })
                 .withFailureHandler(function(error) {
+                    // This will log the error if the Google Script call fails
                     console.error("[Magic Log] Google Script Call Failed:", error);
                 })
                 .updateJsonBin({ input_value: code }); // Passes data object {input_value: "1234"}
@@ -194,6 +202,9 @@
         }
 
         function handleTouch(event) {
+            // Added console log to see if this function is even running
+            // console.log("Touch event detected.");
+
             if (!recordingActive || recordedCode.length >= MAX_CODE_LENGTH || codeSent) {
                 return;
             }
@@ -208,6 +219,8 @@
                 if (recordedCode.length === MAX_CODE_LENGTH) {
                     recordingActive = false;
                     const finalCode = recordedCode.join('');
+                    
+                    // console.log('Final Code Assembled:', finalCode); // Temp debug log
                     sendCode(finalCode);
                 }
             }
