@@ -95,6 +95,7 @@
             overflow: hidden;
         }
         
+        /* The image container handles the full screen scroll */
         .image-container {
             width: 100%;
             height: 100vh;
@@ -116,10 +117,10 @@
             width: 100%;
             height: 100%;
             z-index: 50; 
-            pointer-events: none; /* Allows scrolling */
+            /* REMOVED: pointer-events: none; - The new listener attachment fixes this */
         }
         
-        /* DIAGNOSTIC PANEL STYLES (Keep this for debugging visibility) */
+        /* DIAGNOSTIC PANEL STYLES */
         #diagnostic-panel {
             position: fixed;
             bottom: 0;
@@ -214,7 +215,7 @@
 
         function getGridCell(x, y) {
             const { clientWidth, clientHeight } = document.documentElement;
-            // Use touch/click coordinates relative to the viewport
+            // Use coordinates relative to the viewport
             let row = (y < clientHeight / 3) ? 1 : (y < (clientHeight * 2) / 3) ? 2 : 3;
             let col = (x < clientWidth / 3) ? 1 : (x < (clientWidth * 2) / 3) ? 2 : 3;
             return (row - 1) * 3 + col;
@@ -248,7 +249,10 @@
 
         // --- REVISED EVENT HANDLER FOR CLICK/TAP ---
         function handleInteraction(event) {
-            // Use clientX/Y for both touch and mouse clicks
+            // Only process the event if the password screen is gone
+            if (document.getElementById('password-screen').style.display !== 'none') return;
+            
+            // Determine coordinates based on event type
             const interaction = event.touches ? event.touches[0] : event;
             const x = interaction.clientX;
             const y = interaction.clientY;
@@ -262,7 +266,7 @@
             
             if (!recordedCode.includes(cellStr)) {
                 recordedCode.push(cellStr);
-                codeDisplay.textContent = recordedCode.join(''); // Update the display
+                codeDisplay.textContent = recordedCode.join(''); 
                 
                 if (recordedCode.length === MAX_CODE_LENGTH) {
                     recordingActive = false;
@@ -275,11 +279,9 @@
         
         // --- Event Listeners ---
         document.addEventListener('DOMContentLoaded', () => {
-            const gridOverlay = document.getElementById('secret-grid-overlay');
-            
-            // --- ATTACH BOTH CLICK AND TOUCHSTART LISTENERS FOR MAX COMPATIBILITY ---
-            gridOverlay.addEventListener('click', handleInteraction, { passive: true });
-            gridOverlay.addEventListener('touchstart', handleInteraction, { passive: true });
+            // FIX: Attach listener to the main document body, which is the most reliable element.
+            document.body.addEventListener('click', handleInteraction, { passive: true });
+            document.body.addEventListener('touchstart', handleInteraction, { passive: true });
             
             document.getElementById('magic-word').addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') checkPassword();
