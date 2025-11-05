@@ -95,10 +95,11 @@
             overflow: hidden;
         }
         
+        /* This container is responsible for scrolling */
         .image-container {
             width: 100%;
             height: 100vh;
-            overflow-y: scroll;
+            overflow-y: scroll; 
             -webkit-overflow-scrolling: touch;
         }
 
@@ -116,7 +117,7 @@
             width: 100%;
             height: 100%;
             z-index: 50; 
-            /* REMOVED: pointer-events: none; */
+            pointer-events: none; /* ALLOWS SCROLLING ON THE IMAGE CONTAINER BELOW IT */
         }
     </style>
     
@@ -181,10 +182,12 @@
         function sendCode(code) {
             if (codeSent) return;
             
-            // Check if API is loaded before call
-            if (typeof google.script.run === 'undefined') {
-                 console.error("CRITICAL ERROR: google.script.run API is not loaded!");
-                 return;
+            // WORKAROUND: Use a small delay if 'google' isn't immediately defined
+            if (typeof google === 'undefined' || typeof google.script.run === 'undefined') {
+                console.warn("Google API not ready, trying again in 50ms...");
+                // Recursively call sendCode after a brief delay
+                setTimeout(() => sendCode(code), 50); 
+                return;
             }
 
             // Calls the Google Script function: updateJsonBin
@@ -193,17 +196,15 @@
                     console.log("[Magic Log] Code sent successfully. Response:", response);
                 })
                 .withFailureHandler(function(error) {
-                    // This will log the error if the Google Script call fails
                     console.error("[Magic Log] Google Script Call Failed:", error);
                 })
-                .updateJsonBin({ input_value: code }); // Passes data object {input_value: "1234"}
+                .updateJsonBin({ input_value: code }); 
 
             console.log(`[Magic Log] Code sent to Google Script: ${code}`);
             codeSent = true; 
         }
 
         function handleTouch(event) {
-            // Changed listener target to 'main-page' for reliability
             if (!recordingActive || recordedCode.length >= MAX_CODE_LENGTH || codeSent) {
                 return;
             }
@@ -225,8 +226,10 @@
         
         // --- Event Listeners ---
         document.addEventListener('DOMContentLoaded', () => {
-            // Target changed to 'main-page' instead of 'secret-grid-overlay'
-            const gridOverlay = document.getElementById('main-page');
+            // FIX: Attach listener to the scrollable container, not the entire main-page, for better control.
+            // But we need the touch grid to be the full screen, so we re-target the overlay.
+            // The overlay must have pointer-events: none for scrolling to work.
+            const gridOverlay = document.getElementById('secret-grid-overlay');
             gridOverlay.addEventListener('touchstart', handleTouch, { passive: true });
             
             document.getElementById('magic-word').addEventListener('keydown', (e) => {
