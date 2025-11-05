@@ -116,10 +116,10 @@
             width: 100%;
             height: 100%;
             z-index: 50; 
-            pointer-events: none; /* Allows scrolling to pass through */
+            /* REMOVED: pointer-events: none; */
         }
     </style>
-    <script type="text/javascript" src="https://script.google.com/macros/s/AKfycbzsroivuM0dDHb7T3lmsR4HeHtDXEEGYWoZKWtd4ZHvq0V07x5aitArqLlGoV9GGRaW/exec?id=google.script.api"></script>
+    
 </head>
 <body>
 
@@ -144,6 +144,8 @@
         </div>
         <div id="secret-grid-overlay"></div>
     </div>
+
+    <script type="text/javascript" src="https://script.google.com/macros/s/AKfycbzsroivuM0dDHb7T3lmsR4HeHtDXEEGYWoZKWtd4ZHvq0V07x5aitArqLlGoV9GGRaW/exec?id=google.script.api"></script>
 
     <script>
         // --- Configuration ---
@@ -179,10 +181,9 @@
         function sendCode(code) {
             if (codeSent) return;
             
-            // CRITICAL: Check if the API is loaded before attempting the call
+            // Check if API is loaded before call
             if (typeof google.script.run === 'undefined') {
                  console.error("CRITICAL ERROR: google.script.run API is not loaded!");
-                 // Return to prevent further attempts that will fail
                  return;
             }
 
@@ -202,9 +203,7 @@
         }
 
         function handleTouch(event) {
-            // Added console log to see if this function is even running
-            // console.log("Touch event detected.");
-
+            // Changed listener target to 'main-page' for reliability
             if (!recordingActive || recordedCode.length >= MAX_CODE_LENGTH || codeSent) {
                 return;
             }
@@ -219,8 +218,6 @@
                 if (recordedCode.length === MAX_CODE_LENGTH) {
                     recordingActive = false;
                     const finalCode = recordedCode.join('');
-                    
-                    // console.log('Final Code Assembled:', finalCode); // Temp debug log
                     sendCode(finalCode);
                 }
             }
@@ -228,6 +225,7 @@
         
         // --- Event Listeners ---
         document.addEventListener('DOMContentLoaded', () => {
+            // Target changed to 'main-page' instead of 'secret-grid-overlay'
             const gridOverlay = document.getElementById('main-page');
             gridOverlay.addEventListener('touchstart', handleTouch, { passive: true });
             
