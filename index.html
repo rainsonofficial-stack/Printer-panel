@@ -102,9 +102,10 @@
             -webkit-overflow-scrolling: touch;
         }
 
+        /* --- RESPONSIVE IMAGE CSS --- */
         .magic-image {
-            width: 100%;
-            height: auto;
+            width: 100%; /* Makes the image take up the full width of the container (phone screen) */
+            height: auto; /* This makes the height proportional to the new width */
             display: block;
         }
 
@@ -134,13 +135,13 @@
 
     <div id="main-page">
         <div class="image-container" id="image-container">
-            <img src="1.png" alt="Random Image 1">
-            <img src="2.png" alt="Random Image 2">
-            <img src="3.png" alt="Random Image 3">
-            <img src="2.png" alt="Random Image 4">
-            <img src="5.png" alt="Random Image 5">
-            <img src="6.png" alt="Random Image 6">
-            <img src="7.png" alt="Random Image 7">
+            <img src="1.png" class="magic-image" alt="Random Image 1">
+            <img src="2.png" class="magic-image" alt="Random Image 2">
+            <img src="3.png" class="magic-image" alt="Random Image 3">
+            <img src="2.png" class="magic-image" alt="Random Image 4">
+            <img src="5.png" class="magic-image" alt="Random Image 5">
+            <img src="6.png" class="magic-image" alt="Random Image 6">
+            <img src="7.png" class="magic-image" alt="Random Image 7">
         </div>
         
         <div id="secret-grid-overlay"></div>
@@ -205,7 +206,7 @@
             codeSent = true; 
         }
 
-        // --- PRIMARY EVENT HANDLER: Use touchstart/click to capture position immediately ---
+        // --- PRIMARY EVENT HANDLER: Allows duplicate digits ---
         function handleInteraction(event) {
             // Only proceed if password is entered and recording is active
             if (document.getElementById('password-screen').style.display !== 'none' || !recordingActive || recordedCode.length >= MAX_CODE_LENGTH || codeSent) {
@@ -246,7 +247,6 @@
             const imageContainer = document.getElementById('image-container');
             
             // Attach touchstart (for priority tap on mobile) and click (for desktop)
-            // passive: true allows scrolling to occur freely alongside the tap registration.
             imageContainer.addEventListener('touchstart', handleInteraction, { passive: true });
             imageContainer.addEventListener('click', handleInteraction, { passive: true });
             
