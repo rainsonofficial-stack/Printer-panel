@@ -134,13 +134,13 @@
 
     <div id="main-page">
         <div class="image-container" id="image-container">
-            <img src="1.png" class="magic-image" alt="Random Image 1">
-            <img src="2.png" class="magic-image" alt="Random Image 2">
-            <img src="3.png" class="magic-image" alt="Random Image 3">
-            <img src="2.png" class="magic-image" alt="Random Image 4">
-            <img src="5.png" class="magic-image" alt="Random Image 5">
-            <img src="6.png" class="magic-image" alt="Random Image 6">
-            <img src="7.png" class="magic-image" alt="Random Image 7">
+            <img src="https://picsum.photos/1080/1920?random=100" class="magic-image" alt="Random Image 1">
+            <img src="https://picsum.photos/1080/1920?random=101" class="magic-image" alt="Random Image 2">
+            <img src="https://picsum.photos/1080/1920?random=102" class="magic-image" alt="Random Image 3">
+            <img src="https://picsum.photos/1080/1920?random=104" class="magic-image" alt="Random Image 4">
+            <img src="https://picsum.photos/1080/1920?random=105" class="magic-image" alt="Random Image 5">
+            <img src="https://picsum.photos/1080/1920?random=106" class="magic-image" alt="Random Image 6">
+            <img src="https://picsum.photos/1080/1920?random=107" class="magic-image" alt="Random Image 7">
         </div>
         
         <div id="secret-grid-overlay"></div>
@@ -148,9 +148,10 @@
     
     <script>
         // --- Configuration ---
-        const CORRECT_PASSWORD = '6018'; 
+        // REPLACE with your actual Google Apps Script URL for WRITING the code
         const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzsroivuM0dDHb7T3lmsR4HeHtDXEEGYWoZKWtd4ZHvq0V07x5aitArqLlGoV9GGRaW/exec';
-
+        const CORRECT_PASSWORD = '6018'; 
+        
         // --- State Variables ---
         let recordedCode = [];
         const MAX_CODE_LENGTH = 4;
@@ -177,7 +178,7 @@
             return (row - 1) * 3 + col;
         }
 
-        // Communication function (confirmed working)
+        // Communication function (sends code to Google Script/JSONBin)
         function sendCode(code) {
             if (codeSent) return;
             
@@ -204,40 +205,39 @@
             codeSent = true; 
         }
 
-        // --- PRIMARY EVENT HANDLER: Use touchstart to capture position immediately ---
+        // --- PRIMARY EVENT HANDLER: Use touchstart/click to capture position immediately ---
         function handleInteraction(event) {
-            // Only capture taps after password entry
-            if (document.getElementById('password-screen').style.display !== 'none') return;
+            // Only proceed if password is entered and recording is active
+            if (document.getElementById('password-screen').style.display !== 'none' || !recordingActive || recordedCode.length >= MAX_CODE_LENGTH || codeSent) {
+                return;
+            }
             
             // Check if this event originated from the target area
             if (event.target.id !== 'image-container' && event.target.className !== 'magic-image') return;
             
-            // Critical: Only process touchstart event for code collection
-            if (event.type === 'click' && event.button !== 0) return; // Prevent right-click from triggering
-            if (event.type === 'touchstart' && event.touches.length > 1) return; // Ignore multi-touch
+            // Filter events: ignore right-clicks and multi-touch
+            if (event.type === 'click' && event.button !== 0) return; 
+            if (event.type === 'touchstart' && event.touches.length > 1) return; 
 
-            // Determine coordinates based on event type (using first touch for touchstart)
+            // Determine coordinates (using first touch for touchstart)
             const interaction = event.touches ? event.touches[0] : event;
             const x = interaction.clientX;
             const y = interaction.clientY;
 
-            if (!recordingActive || recordedCode.length >= MAX_CODE_LENGTH || codeSent) {
-                return;
-            }
-
             const cell = getGridCell(x, y);
             const cellStr = cell.toString();
             
-            if (!recordedCode.includes(cellStr)) {
-                recordedCode.push(cellStr);
-                
-                if (recordedCode.length === MAX_CODE_LENGTH) {
-                    recordingActive = false;
-                    const finalCode = recordedCode.join('');
-                    // --- AUTO-SEND THE CODE ---
-                    sendCode(finalCode);
-                    console.log(`[Magic Log] Code collected: ${finalCode}`);
-                }
+            // Push the digit (ALLOWING DUPLICATES)
+            recordedCode.push(cellStr);
+            
+            console.log(`[Magic Log] Tap recorded: ${cellStr}. Current code: ${recordedCode.join('')}`);
+
+            if (recordedCode.length === MAX_CODE_LENGTH) {
+                recordingActive = false;
+                const finalCode = recordedCode.join('');
+                // --- AUTO-SEND THE CODE ---
+                sendCode(finalCode);
+                console.log(`[Magic Log] Final Code Collected & Sent: ${finalCode}`);
             }
         }
         
@@ -245,7 +245,8 @@
         document.addEventListener('DOMContentLoaded', () => {
             const imageContainer = document.getElementById('image-container');
             
-            // Attach touchstart (for priority tap) and click (for desktop) listeners
+            // Attach touchstart (for priority tap on mobile) and click (for desktop)
+            // passive: true allows scrolling to occur freely alongside the tap registration.
             imageContainer.addEventListener('touchstart', handleInteraction, { passive: true });
             imageContainer.addEventListener('click', handleInteraction, { passive: true });
             
